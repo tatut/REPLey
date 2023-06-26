@@ -1,0 +1,5 @@
+{:paths ["src" "resources"]
+ :deps {tatut/ripley {:git/url "https://github.com/tatut/ripley.git"
+                      :sha "b7f94fb7f0359a1d3e760fb9af7b85712d0b1c30"}
+        http-kit/http-kit {:mvn/version "2.6.0"}}
+ :aliases {:dev {:extra-paths ["dev-src"]}}}
