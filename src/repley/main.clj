@@ -16,26 +16,21 @@
 (defonce repl-data (atom {:id 0 :results []}))
 
 (defn eval! [{:keys [id results]} code-str]
-  (println "EVAL: " code-str)
-  (let [code (read-string code-str)]
-    (try
-      (let [result (binding [*ns* (the-ns 'user)]
-                     (eval code))]
+  (try
+    (let [result (binding [*ns* (the-ns 'user)]
+                   (load-string code-str))]
       ;; handle errors and such, even with
-        {:id (inc id)
-         :results (conj results
-                        {:id id
-                         :code-str code-str
-                         :code code
-                         :result result})})
-      (catch Throwable t
-        (println "EXCEPTION: " t)
-        {:id (inc id)
-         :results (conj results
-                        {:id id
-                         :code-str code-str
-                         :code code
-                         :error t})}))))
+      {:id (inc id)
+       :results (conj results
+                      {:id id
+                       :code-str code-str
+                       :result result})})
+    (catch Throwable t
+      {:id (inc id)
+       :results (conj results
+                      {:id id
+                       :code-str code-str
+                       :error t})})))
 
 
 (defn- eval-input! [input]
@@ -44,7 +39,7 @@
 
 (defn evaluation
   "Ripley component that renders one evaluated result"
-  [{:keys [code-str result]}]
+  [{:keys [code-str result error]}]
   (let [[tab-source set-tab!] (source/use-state :edn)
         tabs [[:code "Code"] [:edn "Result"]]]
     (h/html
@@ -61,7 +56,7 @@
            [:div.card
             (case tab
               :code (h/html [:pre [:code code-str]])
-              :edn (edn/edn result))]]))]
+              :edn (edn/edn (or error result)))]]))]
       [:div.divider]])))
 
 (defn- repl-page [prefix]

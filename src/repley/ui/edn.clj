@@ -80,6 +80,12 @@
 (defmethod summary clojure.lang.Var [ctx v]
   (h/out! "Var " (str v)))
 
+(defmethod summary java.lang.Throwable [ctx ex]
+  (let [ex-type (.getName (type ex))
+        ex-msg (.getMessage ex)]
+    (h/html
+     [:div.text-red-500.inline ex-msg])))
+
 (def ^:const string-cutoff-length 64)
 (defmethod summary java.lang.String [ctx str]
   (if (> (count str) string-cutoff-length)
