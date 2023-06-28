@@ -7,4 +7,6 @@
 Should not block or do any costly calculations as this is used when
 rendering the user interface.")
   (render [this data]
-    "Render a Ripley component that visualizes the data."))
+    "Render a Ripley component that visualizes the data.")
+  (ring-handler [this]
+    "Optional ring handler if the visualizer exposes HTTP endpoints"))

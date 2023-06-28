@@ -4,6 +4,7 @@
 
 (defmulti render (fn [_ctx item] (type item)))
 (defmulti summary (fn [_ctx item] (type item)))
+(defmulti summarize? (fn [item] (type item)))
 
 (defmethod render :default [_ item]
   (let [str (pr-str item)]
@@ -81,10 +82,17 @@
   (h/out! "Var " (str v)))
 
 (defmethod summary java.lang.Throwable [ctx ex]
-  (let [ex-type (.getName (type ex))
-        ex-msg (.getMessage ex)]
-    (h/html
-     [:div.text-red-500.inline ex-msg])))
+  (if (= clojure.lang.Compiler$CompilerException (type ex))
+    ;; Special handling for compiler exceptions
+    (let [msg (.getMessage (.getCause ex))
+          {:clojure.error/keys [phase line column]} (ex-data ex)
+          phase (name phase)]
+      (h/html
+       [:div.text-red-500.inline msg [:span.font-xs " (" phase " at line " line ", column " column ")"]]))
+    (let [ex-type (.getName (type ex))
+          ex-msg (.getMessage ex)]
+      (h/html
+       [:div.text-red-500.inline ex-msg]))))
 
 (def ^:const string-cutoff-length 64)
 (defmethod summary java.lang.String [ctx str]
@@ -95,11 +103,19 @@
 (defmethod summary :default [ctx thing]
   (h/out! (str (type thing)) " instance"))
 
+(defmethod summarize? java.lang.String [s] (> (count s) string-cutoff-length))
+(defmethod summarize? java.lang.Number [_] false)
+(defmethod summarize? clojure.lang.Keyword [_] false)
+(defmethod summarize? :default [thing] true)
 
 (defn edn
   ([thing] (edn {} thing))
   ([ctx thing]
-   (h/html
-    [:details
-     [:summary (summary ctx thing)]
-     (render ctx thing)])))
+   (if (nil? thing)
+     (h/html  [:span.nil "nil"])
+     (if-not (summarize? thing)
+       (render ctx thing)
+       (h/html
+        [:details
+         [:summary (summary ctx thing)]
+         (render ctx thing)])))))
