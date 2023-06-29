@@ -85,7 +85,6 @@
               (let [id (subs q 3)
                     file (some (fn [[file id*]]
                                  (when (= id* id) file)) @downloads)]
-                (def *dl downloads)
                 (swap! downloads dissoc file)
                 (when file
                   {:status 200
