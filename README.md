@@ -13,5 +13,11 @@ this in a production app.
 
 ## Demos
 
+Inspecting properties map as a table:
 ![Props map as table](https://github.com/tatut/REPLey/assets/83725/6bdd7db7-6c30-4680-8bbf-e0ea9489eef2)
+
+
+File info can download file (can be disabled in config):
+![File visualizer](https://github.com/tatut/REPLey/assets/83725/135efabf-daf7-4ba6-9706-8b053bafea91)
+
 
