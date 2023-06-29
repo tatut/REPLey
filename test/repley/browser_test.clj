@@ -34,3 +34,13 @@
   (w/fill [:evaluation "input"] "Fiji")
   (Thread/sleep 200)
   (is (= 1 (w/count* (w/query "table.table tbody tr")))))
+
+(defn breadcrumbs-test
+  ;; evaluate a nested map structure
+  (eval-in-repl "{:hello {:there {:my [\"friend\" {:name \"Rich\"} \"!\"]}}}")
+  ;; drill down from table
+
+  ;; drill back to :there
+
+  ;; drill back to home, breadcrumbs disappear
+  )
