@@ -59,7 +59,7 @@
 
 (defn file-visualizer [{prefix :prefix :as _repley-opts} {:keys [enabled? allow-download?]}]
   (let [downloads (atom {})
-        download! #(swap! downloads assoc % (str (random-uuid)))]
+        download! #(swap! downloads assoc % (str (java.util.UUID/randomUUID)))]
     (when enabled?
       (reify p/Visualizer
         (label [_] "File")
