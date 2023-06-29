@@ -4,7 +4,7 @@ A web REPL made with Ripley
 
 ## Usage
 
-Start with ```% clj -e "((requiring-resolve 'repley.main/start))"``` and open browser to localhost
+Start with ```% clj -M:dev``` and open browser to localhost
 port 3001. Use Cmd-Enter to evaluate text in the editor.
 
 Another way to use is to include this as a library and use `repley.main/repley-handler` as a handler
