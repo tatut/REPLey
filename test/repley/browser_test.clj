@@ -1,13 +1,12 @@
 (ns repley.browser-test
   (:require [wally.main :as w]
-            [wally.selectors :as ws]
             [repley.main :as main]
             [clojure.test :as t :refer [deftest is testing]]
             [clojure.string :as str]))
 
 (defn with-repl [f]
   (let [stop-server (main/start {:http {:port 4444}})]
-    (w/with-page (w/make-page {:headless false})
+    (w/with-page (w/make-page {:headless true})
       (try
         (w/navigate "http://localhost:4444/")
         (f)
@@ -29,5 +28,9 @@
   (Thread/sleep 1000) ;; wait for HTTP load and CSV parsing to take place
   (let [customers (-> 'user ns-publics (get 'customers) deref)]
     (is (= 101 (count customers))))
-  (w/click (w)"")
-  )
+  (w/click (w/find-one-by-text :.tab "Table"))
+  (w/wait "table.table")
+  (is (= 100 (w/count* (w/query "table.table tbody tr"))))
+  (w/fill [:evaluation "input"] "Fiji")
+  (Thread/sleep 200)
+  (is (= 1 (w/count* (w/query "table.table tbody tr")))))
