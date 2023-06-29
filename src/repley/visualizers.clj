@@ -7,7 +7,8 @@
             [ripley.live.source :as source]
             [ripley.html :as h]
             [ring.util.io :as ring-io]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [repley.ui.icon :as icon]))
 
 (def sample-size
   "How many items to check when testing collection items."
@@ -73,7 +74,7 @@
             [::h/when (.isFile data)
              [:div [:b "Size: "] (h/dyn! (.format (java.text.NumberFormat/getIntegerInstance) (.length data))) " bytes"]]
             [::h/when (and (.isFile data) allow-download?)
-             [:button.btn {:on-click #(download! data)} "Download"]]
+             [:button.btn {:on-click #(download! data)} (icon/download-icon) "Download"]]
             [::h/live (source/computed #(get % data) downloads)
              (fn [id]
                (let [url (str prefix "/file-visualizer/download?id=" id)]
