@@ -50,7 +50,7 @@
         (cond
           render-full (render-full row)
           render (render data)
-          :else (h/out! (str data)))]]])))
+          :else (h/dyn! data))]]])))
 
 (defn- filter-input [set-filter!]
   (let [id (str (gensym "table-filter"))]

@@ -11,6 +11,7 @@
         (w/navigate "http://localhost:4444/")
         (f)
         (finally
+          (main/clear!)
           (stop-server))))))
 
 (t/use-fixtures :each with-repl)
@@ -35,7 +36,7 @@
   (Thread/sleep 200)
   (is (= 1 (w/count* (w/query "table.table tbody tr")))))
 
-(defn breadcrumbs-test
+#_(defn breadcrumbs-test
   ;; evaluate a nested map structure
   (eval-in-repl "{:hello {:there {:my [\"friend\" {:name \"Rich\"} \"!\"]}}}")
   ;; drill down from table
@@ -44,3 +45,9 @@
 
   ;; drill back to home, breadcrumbs disappear
   )
+
+(deftest table-data-escaped
+  (eval-in-repl "{:foo 1 :bar \"<script>alert(2)</script>\"}")
+  (w/click (w/find-one-by-text :.tab "Table"))
+  (.pause (w/get-page))
+  (is (w/find-one-by-text "td" "<script>alert(2)</script>")))
