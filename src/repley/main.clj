@@ -101,18 +101,30 @@
     (add-tap f)
     #(remove-tap f)))
 
+(defn- display
+  "Prepare value for display."
+  [value]
+  (cond
+    (var? value)
+    (deref value)
 
+    (instance? Throwable value)
+    value
+
+    ;; We don't want atoms to be datafied, we may want
+    ;; to use them as Ripley sources (so UI autoupdates
+    ;; if it changes)
+    (instance? clojure.lang.IDeref value)
+    value
+
+    :else
+    (df/datafy value)))
 
 (defn evaluation
   "Ripley component that renders one evaluated result"
   [visualizers {:keys [id code-str ns result breadcrumbs]}]
   (let [[tab-source set-tab!] (source/use-state :edn)
-        value result
-
-        ;; Deref vars directly
-        value (if (var? value)
-                (deref value)
-                value)
+        value (display result)
         tabs (into [[:code "Code"]
                     [:edn "Result"]]
                    (for [v visualizers
