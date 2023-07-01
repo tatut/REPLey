@@ -65,6 +65,9 @@
            data-source)))
       (ring-handler [_] nil))))
 
+(defn file-size [f]
+  (str (.format (java.text.NumberFormat/getIntegerInstance) (.length f)) " bytes"))
+
 (defn file-visualizer [{prefix :prefix :as _repley-opts} {:keys [enabled? allow-download?]}]
   (let [downloads (atom {})
         download! #(swap! downloads assoc % (str (java.util.UUID/randomUUID)))]
@@ -78,9 +81,20 @@
            [:div
             [:p "File info"]
             [:div [:b "Name: "] (h/dyn! (.getName data))]
-            [::h/when (.isFile data)
-             [:div [:b "Size: "] (h/dyn! (.format (java.text.NumberFormat/getIntegerInstance) (.length data))) " bytes"]]
-            [::h/when (and (.isFile data) allow-download?)
+            [::h/if (.isFile data)
+             ;; Show file size for regular files
+             [:div [:b "Size: "] (h/dyn! (file-size data))]
+
+             ;; Show listing of files for directories
+             (table/table
+              {:key #(.getAbsolutePath %)
+               :columns [{:label "Name" :accessor #(.getName %)}
+                         {:label "Size" :accessor #(if (.isDirectory %)
+                                                     "[DIR]"
+                                                     (file-size %))}]}
+              (source/static (.listFiles data)))]
+
+            [::h/when (and (.isFile data) (.canRead data) allow-download?)
              [:button.btn {:on-click #(download! data)} (icon/download) "Download"]]
             [::h/live (source/computed #(get % data) downloads)
              (fn [id]

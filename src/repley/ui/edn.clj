@@ -130,21 +130,26 @@
       (h/html
        [:div.text-red-500.inline ex-msg]))))
 
-(def ^:const string-cutoff-length 64)
-(defmethod summary java.lang.String [ctx str]
-  (if (> (count str) string-cutoff-length)
-    (h/out! "String of length " (count str) " \" " (subs str 0 string-cutoff-length) "\"…")
-    (h/out! "String \" " str "\"")))
-
 (defmethod summary :default [ctx thing]
   (h/out! (str (type thing)) " instance"))
 
-(defmethod summarize? java.lang.String [s] (> (count s) string-cutoff-length))
+(defmethod summarize? java.lang.String [s] false)
 (defmethod summarize? java.lang.Number [_] false)
 (defmethod summarize? clojure.lang.Keyword [_] false)
 (defmethod summarize? :default [thing] true)
 
 (def ^:private initial-max-output 1024)
+
+(defn- expand-buttons [max-output set-max-output!]
+  (h/html
+   [::h/when (truncated?)
+    [:div.flex
+     [:div.inline.mx-2.text-accent "output truncated"]
+     [:button.btn.btn-accent.btn-xs.mx-2 {:on-click #(set-max-output! (* 2 max-output))}
+      "more"]
+     [:button.btn.btn-accent.btn-xs.mx-2 {:on-click #(set-max-output! 0)}
+      "full"]]]))
+
 (defn edn
   ([thing] (edn {} thing))
   ([ctx thing]
@@ -156,17 +161,14 @@
         [::h/live max-output-source
          (fn [max-output]
            (binding [*truncate* (truncate-state max-output)]
-             (h/html
-              [:div
-               [::h/if (not (summarize? thing))
-                (render ctx thing)
-                [:details {:open true}
-                 [:summary (summary ctx thing)]
-                 (render ctx thing)]]
-               [::h/when (truncated?)
-                [:div.flex
-                 [:div.inline.mx-2.text-accent "output truncated"]
-                 [:button.btn.btn-accent.btn-xs.mx-2 {:on-click #(set-max-output! (* 2 max-output))}
-                  "more"]
-                 [:button.btn.btn-accent.btn-xs.mx-2 {:on-click #(set-max-output! 0)}
-                  "full"]]]])))]]]))))
+             (let [expand (partial expand-buttons max-output set-max-output!)]
+               (h/html
+                [:div
+                 [::h/if (not (summarize? thing))
+                  [:div.my-2
+                   (render ctx thing)
+                   (expand)]
+                  [:details {:open true}
+                   [:summary (summary ctx thing)]
+                   (render ctx thing)
+                   (expand)]]]))))]]]))))
