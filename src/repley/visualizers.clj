@@ -8,35 +8,38 @@
             [ripley.html :as h]
             [ring.util.io :as ring-io]
             [clojure.java.io :as io]
-            [repley.ui.icon :as icon]))
+            [repley.ui.icon :as icon]
+            [repley.repl :as repl]))
 
 (def sample-size
   "How many items to check when testing collection items."
   10)
 
 (defn- map-columns-and-data [data]
-  (when (map? data)
-    [[{:label "Key" :accessor key} {:label "Value" :accessor val}]
-     data]))
+  (let [id repl/*result-id*]
+    (when (map? data)
+      {:columns [{:label "Key" :accessor key} {:label "Value" :accessor val}]
+       :data data
+       :on-row-click #(repl/nav! id (key %))})))
 
 (defn- seq-of-maps-columns-and-data [data]
   (when (and (sequential? data)
              (every? map? (take 10 data)))
-    [(sort-by :label
-              (for [k (into #{}
-                            (mapcat keys)
-                            data)]
-                {:label (str k) :accessor #(get % k)}))
-     data]))
+    {:columns (sort-by :label
+                       (for [k (into #{}
+                                     (mapcat keys)
+                                     data)]
+                         {:label (str k) :accessor #(get % k)}))
+     :data data}))
 
 (defn- csv-columns-and-data [data]
   (when (and (seq? data)
              (every? vector? (take 10 data)))
     (let [columns (first data)
           data (rest data)]
-      [(map-indexed (fn [i label]
-                      {:label label :accessor #(nth % i)}) columns)
-       data])))
+      {:columns (map-indexed (fn [i label]
+                               {:label label :accessor #(nth % i)}) columns)
+       :data data})))
 
 (def columns-and-data (some-fn map-columns-and-data
                                seq-of-maps-columns-and-data
@@ -51,10 +54,11 @@
       (supports? [_ data]
         (supported-data? data))
       (render [_ data]
-        (let [[columns data] (columns-and-data data)
+        (let [{:keys [columns data on-row-click]} (columns-and-data data)
               [data-source _] (source/use-state data)]
           (table/table
-           {:columns columns}
+           {:columns columns
+            :on-row-click on-row-click}
            data-source)))
       (ring-handler [_] nil))))
 
@@ -74,7 +78,7 @@
             [::h/when (.isFile data)
              [:div [:b "Size: "] (h/dyn! (.format (java.text.NumberFormat/getIntegerInstance) (.length data))) " bytes"]]
             [::h/when (and (.isFile data) allow-download?)
-             [:button.btn {:on-click #(download! data)} (icon/download-icon) "Download"]]
+             [:button.btn {:on-click #(download! data)} (icon/download) "Download"]]
             [::h/live (source/computed #(get % data) downloads)
              (fn [id]
                (let [url (str prefix "/file-visualizer/download?id=" id)]

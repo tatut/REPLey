@@ -1,6 +1,7 @@
 (ns repley.browser-test
   (:require [wally.main :as w]
             [repley.main :as main]
+            [repley.repl :as repl]
             [clojure.test :as t :refer [deftest is testing]]
             [clojure.string :as str]))
 
@@ -11,7 +12,7 @@
         (w/navigate "http://localhost:4444/")
         (f)
         (finally
-          (main/clear!)
+          (repl/clear!)
           (stop-server))))))
 
 (t/use-fixtures :each with-repl)
