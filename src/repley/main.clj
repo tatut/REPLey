@@ -14,10 +14,10 @@
             [repley.ui.icon :as icon]
             [clojure.datafy :as df]))
 
-
-(defonce repl-data (atom {:id 0
-                          :results []
-                          :ns (the-ns 'user)}))
+(defonce initial-repl-data {:id 0
+                            :results []
+                            :ns (the-ns 'user)})
+(defonce repl-data (atom initial-repl-data))
 
 (defn- eval-result [id ns code-str]
   {:id id
@@ -27,6 +27,11 @@
                   (load-string code-str))
                 (catch Throwable t
                   t))})
+
+(defn clear!
+  "Clear all REPL evaluations."
+  []
+  (reset! repl-data initial-repl-data))
 
 (defn eval! [{:keys [ns id] :as repl} code-str]
   (-> repl
