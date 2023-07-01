@@ -53,21 +53,32 @@
          (fn [results]
            (filterv #(not= (:id %) id) results))))
 
-(defn nav!
-  "Navigate down from current result id to a sub item denoted by k."
-  [id k]
+
+
+(defn nav-by!
+  "Navigate down by giving a function to get the next object from the current on.
+  Next fn must return a map containing `:label` and `:value` for the breadcrumb
+  label and the next result respectively."
+  [id next-fn]
   (update-result!
    id
    (fn [{:keys [result breadcrumbs] :as r}]
-     (let [next (df/nav result k (get result k))
+     (let [{:keys [value label]} (next-fn result)
            n (or (some-> breadcrumbs last :n inc) 1)]
        (assoc r
               :breadcrumbs (conj (or breadcrumbs
                                      [{:label :root :value result :n 0}])
-                                 {:label (pr-str k)
-                                  :value next
+                                 {:label label
+                                  :value value
                                   :n n})
-              :result next)))))
+              :result value)))))
+
+(defn nav!
+  "Navigate down from current result id to a sub item denoted by k."
+  [id k]
+  (nav-by! id (fn [result]
+                {:label (pr-str k)
+                 :value (df/nav result k (get result k))})))
 
 (defn nav-to-crumb!
   "Navigate given result to the nth breadcrumb."

@@ -56,6 +56,7 @@
       (label [_] "Table")
       (supports? [_ data]
         (supported-data? data))
+      (precedence [_] 0)
       (render [_ data]
         (let [{:keys [columns data on-row-click]} (columns-and-data data)
               [data-source _] (source/use-state data)]
@@ -76,31 +77,36 @@
         (label [_] "File")
         (supports? [_ data]
           (instance? java.io.File data))
+        (precedence [_] 100)
         (render [_ data]
-          (h/html
-           [:div
-            [:p "File info"]
-            [:div [:b "Name: "] (h/dyn! (.getName data))]
-            [::h/if (.isFile data)
-             ;; Show file size for regular files
-             [:div [:b "Size: "] (h/dyn! (file-size data))]
+          (let [id repl/*result-id*]
+            (h/html
+             [:div
+              [:p "File info"]
+              [:div [:b "Name: "] (h/dyn! (.getName data))]
+              [::h/if (.isFile data)
+               ;; Show file size for regular files
+               [:div [:b "Size: "] (h/dyn! (file-size data))]
 
-             ;; Show listing of files for directories
-             (table/table
-              {:key #(.getAbsolutePath %)
-               :columns [{:label "Name" :accessor #(.getName %)}
-                         {:label "Size" :accessor #(if (.isDirectory %)
-                                                     "[DIR]"
-                                                     (file-size %))}]}
-              (source/static (.listFiles data)))]
+               ;; Show listing of files for directories
+               (table/table
+                {:key #(.getAbsolutePath %)
+                 :columns [{:label "Name" :accessor #(.getName %)}
+                           {:label "Size" :accessor #(if (.isDirectory %)
+                                                       "[DIR]"
+                                                       (file-size %))}]
+                 :on-row-click #(repl/nav-by! id (fn [_]
+                                                   {:label (.getName %)
+                                                    :value %}))}
+                (source/static (.listFiles data)))]
 
-            [::h/when (and (.isFile data) (.canRead data) allow-download?)
-             [:button.btn {:on-click #(download! data)} (icon/download) "Download"]]
-            [::h/live (source/computed #(get % data) downloads)
-             (fn [id]
-               (let [url (str prefix "/file-visualizer/download?id=" id)]
-                 (h/html
-                  [:div [:a {:target :_blank :href url} "Download here"]])))]]))
+              [::h/when (and (.isFile data) (.canRead data) allow-download?)
+               [:button.btn {:on-click #(download! data)} (icon/download) "Download"]]
+              [::h/live (source/computed #(get % data) downloads)
+               (fn [id]
+                 (let [url (str prefix "/file-visualizer/download?id=" id)]
+                   (h/html
+                    [:div [:a {:target :_blank :href url} "Download here"]])))]])))
         (ring-handler [_]
           (fn [{uri :uri q :query-string}]
             (when (= uri (str prefix "/file-visualizer/download"))
@@ -117,9 +123,20 @@
                             (with-open [in (io/input-stream file)]
                               (io/copy in out))))})))))))))
 
+(defn edn-visualizer [_ {enabled? :enabled?}]
+  (when enabled?
+    (reify p/Visualizer
+      (label [_] "Result")
+      (supports? [_ _] true)
+      (precedence [_] 0)
+      (render [_ data]
+        (edn/edn data))
+      (ring-handler [_] nil))))
+
 (def default-options
   {:visualizers
-   {:table-visualizer {:enabled? true}
+   {:edn-visualizer {:enabled? true}
+    :table-visualizer {:enabled? true}
     :file-visualizer {:enabled? true
                       :allow-download? true}}})
 
@@ -127,5 +144,6 @@
   [opts]
   (let [{v :visualizers :as opts} (merge-with merge default-options opts)]
     (remove nil?
-            [(table-visualizer opts (:table-visualizer v))
+            [(edn-visualizer opts (:edn-visualizer v))
+             (table-visualizer opts (:table-visualizer v))
              (file-visualizer opts (:file-visualizer v))])))
