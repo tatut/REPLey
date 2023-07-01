@@ -26,16 +26,21 @@
               s2 (pr-str o2)]
           (.compareTo s1 s2))))))
 
-(defn- filter-items [ordered-source? filter-fn items text [order-by order-direction]]
-  (let [items (into []
-                    (filter #(filter-fn % text))
-                    items)]
-    (if (and order-by (not ordered-source?))
-      ((case order-direction
-         :asc identity
-         :desc reverse)
-       (sort-by order-by generic-comparator items))
-      items)))
+(defn- filter-items [ordered-source? filter-fn items
+                     {text :filter
+                      [order-by order-direction] :order}]
+
+  (let [filtered-items (into []
+                             (filter #(filter-fn % text))
+                             items)
+        items (if (and order-by (not ordered-source?))
+                ((case order-direction
+                   :asc identity
+                   :desc reverse)
+                 (sort-by order-by generic-comparator filtered-items))
+                filtered-items)]
+    {:items items
+     :count (count items)}))
 
 (defn- render-row [{:keys [columns row-class on-row-click]} row]
   (let [cls (str row-class
@@ -52,11 +57,11 @@
           render (render data)
           :else (h/dyn! data))]]])))
 
-(defn- filter-input [set-filter!]
+(defn- filter-input [set-filter! count-source]
   (let [id (str (gensym "table-filter"))]
     (h/html
-     [:div {:class "my-2 flex sm:flex-row flex-col"}
-      [:div.block.relative
+     [:div.my-2.join
+      [:div.block.relative.join-item
        [:span.h-full.absolute.inset-y-0.left-0.flex.items-center.pl-2
         [:svg.h-4.w-4.fill-current.text-gray-500 {:viewBox "0 0 24 24"}
          [:path {:d "M10 4a6 6 0 100 12 6 6 0 000-12zm-8 6a8 8 0 1114.32 4.906l5.387 5.387a1 1 0 01-1.414 1.414l-5.387-5.387A8 8 0 012 10z"}]]]
@@ -64,7 +69,9 @@
                 :class "appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
                 :placeholder "Filter..."
                 :on-input (js/js-debounced 300 set-filter!
-                                            (js/input-value id))}]]])))
+                                           (js/input-value id))}]]
+      [::h/live count-source
+       #(h/html [:div.join-item.text-sm.mx-2.py-2 " " % " items"])]])))
 
 (defn- header [{:keys [columns]} set-order! [order-by order-direction]]
   (h/html
@@ -81,6 +88,15 @@
          (h/out! (case order-direction
                    :asc " \u2303"
                    :desc " \u2304")))]]]]))
+
+(defn- pagination [set-page! {:keys [row-count page page-size]}]
+  (h/html
+   [:div.join
+    [::h/for [p (range 0 (Math/ceil (/ row-count page-size)))
+              :let [pg (str (inc p))
+                    cls (when (= p page) "btn-active")]]
+     [:button.join-item.btn.btn-sm {:class cls
+                                    :on-click #(set-page! p)} pg]]]))
 
 (defn table
   "A data table that allows ordering by columns and filtering.
@@ -127,26 +143,41 @@
               Add optional callback to when the row is clicked.
               The function is called with the full row data.
 
+  :page-size  How many items to show per page (default: 20).
   "
-  [{:keys [key filter-fn order set-order! render-after empty-message class]
+  [{:keys [key filter-fn order set-order! render-after empty-message page-size class]
     :or {filter-fn default-filter-fn
          key identity
          order [nil :asc]
+         page-size 20
          class "table table-compact table-zebra"} :as table-def} data-source]
-  (let [[filter-source set-filter!] (source/use-state "")
-        [order-source set-table-order!] (source/use-state order)
-        rows-source (source/computed
-                     (partial filter-items (some? set-order!) filter-fn)
-                     data-source filter-source order-source)]
+  (let [[state-source _ update-state!] (source/use-state {:filter "" :order order :page 0})
+        set-filter! #(update-state! assoc :filter % :page 0)
+        set-table-order! #(update-state! assoc :order %)
+        items-source (source/computed
+                      (partial filter-items (some? set-order!) filter-fn)
+                      data-source state-source)
+        rows-source (source/computed (fn [{items :items} {page :page}]
+                                       (->> items
+                                            (drop (* page page-size))
+                                            (take page-size)))
+                                     items-source state-source)
+        pagination-source (source/computed (fn [{c :count} {p :page}]
+                                             (when (> c page-size)
+                                               {:row-count c
+                                                :page p
+                                                :page-size page-size}))
+                                           items-source state-source)]
     (h/html
      [:div.mx-2.font-mono
-      (filter-input set-filter!)
+      (filter-input set-filter! (source/computed :count items-source))
       [:table {:class class}
-       [::h/live order-source (partial header table-def
-                                       #(do
-                                          (when set-order!
-                                            (set-order! %))
-                                          (set-table-order! %)))]
+       [::h/live (source/computed :order state-source)
+        (partial header table-def
+                 #(do
+                    (when set-order!
+                      (set-order! %))
+                    (set-table-order! %)))]
        [::h/when empty-message
         [::h/live (source/computed empty? rows-source)
          #(let [cols (count (:columns table-def))]
@@ -162,5 +193,7 @@
          :key key
          :container-element :tbody
          :source rows-source})
+
        (when render-after
-         (render-after))]])))
+         (render-after))]
+      [::h/live pagination-source (partial pagination #(update-state! assoc :page %))]])))
