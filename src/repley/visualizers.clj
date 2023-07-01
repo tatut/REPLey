@@ -23,14 +23,17 @@
        :on-row-click #(repl/nav! id (key %))})))
 
 (defn- seq-of-maps-columns-and-data [data]
-  (when (and (sequential? data)
-             (every? map? (take 10 data)))
-    {:columns (sort-by :label
-                       (for [k (into #{}
-                                     (mapcat keys)
-                                     data)]
-                         {:label (str k) :accessor #(get % k)}))
-     :data data}))
+  (let [id repl/*result-id*]
+    (when (and (sequential? data)
+               (every? map? (take 10 data)))
+      {:columns (sort-by :label
+                         (for [k (into #{}
+                                       (mapcat keys)
+                                       data)]
+                           {:label (str k) :accessor #(get % k)}))
+       :data (map-indexed (fn [i obj]
+                            (with-meta obj {::index i})) data)
+       :on-row-click #(repl/nav! id (::index (meta %)))})))
 
 (defn- csv-columns-and-data [data]
   (when (and (seq? data)
