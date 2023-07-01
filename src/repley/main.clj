@@ -12,83 +12,8 @@
             [repley.ui.edn :as edn]
             [repley.visualizers :as visualizers]
             [repley.ui.icon :as icon]
-            [clojure.datafy :as df]))
-
-(defonce initial-repl-data {:id 0
-                            :results []
-                            :ns (the-ns 'user)})
-(defonce repl-data (atom initial-repl-data))
-
-(defn- eval-result [id ns code-str]
-  {:id id
-   :ns ns
-   :code-str code-str
-   :result (try (binding [*ns* ns]
-                  (load-string code-str))
-                (catch Throwable t
-                  t))})
-
-(defn clear!
-  "Clear all REPL evaluations."
-  []
-  (reset! repl-data initial-repl-data))
-
-(defn eval! [{:keys [ns id] :as repl} code-str]
-  (-> repl
-      (update :id inc)
-      (update :results conj (eval-result id ns code-str))))
-
-(defn- eval-input! [input]
-  (swap! repl-data eval! input))
-
-(defn- update-result! [id function]
-  (swap! repl-data update :results
-         (fn [results]
-           (mapv (fn [{id* :id :as r}]
-                   (if (= id* id)
-                     (function r)
-                     r)) results))))
-
-(defn- remove-result! [id]
-  (swap! repl-data update :results
-         (fn [results]
-           (filterv #(not= (:id %) id) results))))
-
-(defn- nav!
-  "Navigate down from current result id to a sub item denoted by k."
-  [id k]
-  (update-result!
-   id
-   (fn [{:keys [result breadcrumbs] :as r}]
-     (let [next (df/nav result k (get result k))
-           n (or (some-> breadcrumbs last :n inc) 1)]
-       (assoc r
-              :breadcrumbs (conj (or breadcrumbs
-                                     [{:label :root :value result :n 0}])
-                                 {:label (pr-str k)
-                                  :value next
-                                  :n n})
-              :result next)))))
-
-(defn- nav-to-crumb!
-  "Navigate given result to the nth breadcrumb."
-  [id n]
-  (update-result!
-   id
-   (fn [{:keys [breadcrumbs] :as r}]
-     (let [next (get-in breadcrumbs [n :value])]
-       (if (zero? n)
-         (-> r
-             (dissoc :breadcrumbs)
-             (assoc :result next))
-         (-> r
-             (update :breadcrumbs subvec 0 (inc n))
-             (assoc :result next)))))))
-
-(defn- retry! [id-to-retry]
-  (update-result! id-to-retry
-                  (fn [{:keys [id ns code-str]}]
-                    (eval-result id ns code-str))))
+            [clojure.datafy :as df]
+            [repley.repl :as repl]))
 
 (defn listen-to-tap>
   "Install Clojure tap> listener. All values sent via tap> are
@@ -97,12 +22,9 @@
   Returns a 0 argument function that will remote the tap listener
   when called."
   []
-  (let [f #(swap! repl-data (fn [{:keys [id results]}]
-                              {:id (inc id)
-                               :results (conj results
-                                              {:id id
-                                               :code-str ";; tap> value"
-                                               :result %})}))]
+  (let [f #(repl/add-result! {:code-str (str  ";; tap> value received "
+                                              (pr-str (java.util.Date.)))
+                              :result %})]
     (add-tap f)
     #(remove-tap f)))
 
@@ -139,10 +61,10 @@
     (h/html
      [:div.evaluation
       [:div.actions.mr-2 {:style "float: right;"}
-       [:button.btn.btn-outline.btn-xs.m-1 {:on-click #(remove-result! id)}
-        (icon/trashcan-icon)]
-       [:button.btn.btn-outline.btn-xs.m-1 {:on-click #(retry! id)}
-        (icon/reload-icon)]]
+       [:button.btn.btn-outline.btn-xs.m-1 {:on-click #(repl/remove-result! id)}
+        (icon/trashcan)]
+       [:button.btn.btn-outline.btn-xs.m-1 {:on-click #(repl/retry! id)}
+        (icon/reload)]]
       [::h/live tab-source
        (fn [tab]
          (h/html
@@ -153,7 +75,7 @@
               [::h/for [{:keys [label value n]} breadcrumbs]
                [:li [:a {:on-click (format "_crumb(%d,%d)" id n)}
                      [::h/if (= label :root)
-                      (icon/home-icon)
+                      (icon/home)
                       label]]]]]]]
            [:div.tabs
             [::h/for [[tab-name tab-label] tabs
@@ -168,7 +90,8 @@
                       [:pre [:code code-str]]])
               :edn (edn/edn value)
               ;; Tab is the visualizer impl, call it
-              (p/render tab value))]]))]
+              (binding [repl/*result-id* id]
+                (p/render tab value)))]]))]
       [:div.divider]])))
 
 (defn- repl-page [visualizers prefix]
@@ -182,17 +105,12 @@
        [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.js"}]
        [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/mode/clojure/clojure.min.js"}]
        [:link {:rel :stylesheet :href "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.css"}]
+       (js/export-callbacks
+        {:_eval repl/eval-input!
+         :_crumb repl/nav-to-crumb!
+         :_nav  (fn [id k]
+                  (repl/nav! id (read-string k)))})
        [:script
-        "function _eval(txt) {"
-        (h/out! (h/register-callback (js/js eval-input! "txt")))
-        "}"
-        "function _crumb(id, idx) {"
-        (h/out! (h/register-callback (js/js nav-to-crumb! "id" "idx")))
-        "}"
-        "function _nav(id, k) {"
-        (h/out! (h/register-callback (js/js (fn [id k]
-                                              (nav! id (read-string k))) "id" "k")))
-        "}"
         "function initREPL() {"
         "let editor = CodeMirror.fromTextArea(document.getElementById('repl'), {"
         "lineNumbers: true,"
@@ -215,7 +133,7 @@
        [:div.flex.flex-col
         [:div {:style "height: 80vh; overflow-y: auto;"}
          (collection/live-collection
-          {:source (source/computed :results repl-data)
+          {:source (source/computed :results repl/repl-data)
            :render (partial evaluation visualizers)
            :key :id
            :container-element :span.repl-output})]
