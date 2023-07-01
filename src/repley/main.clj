@@ -47,17 +47,24 @@
     :else
     (df/datafy value)))
 
+(defn select-visualizer [vs]
+  (:v (reduce (fn [{:keys [v p] :as acc} vis]
+                (let [prec (p/precedence vis)]
+                  (if (or (nil? p) (> prec p))
+                    {:v vis :p prec}
+                    acc)))
+              {} vs)))
+
 (defn evaluation
   "Ripley component that renders one evaluated result"
   [visualizers {:keys [id code-str ns result breadcrumbs]}]
-  (let [[tab-source set-tab!] (source/use-state :edn)
-        value (display result)
-        tabs (into [[:code "Code"]
-                    [:edn "Result"]]
-                   (for [v visualizers
-                         :when (p/supports? v value)
-                         :let [label (p/label v)]]
-                     [v label]))]
+  (let [value (display result)
+        supported-visualizers (filter #(p/supports? % value) visualizers)
+        tabs (into [[:code "Code"]]
+                   (for [v supported-visualizers]
+                     [v (p/label v)]))
+        [tab-source set-tab!] (source/use-state
+                               (select-visualizer supported-visualizers))]
     (h/html
      [:div.evaluation
       [:div.actions.mr-2 {:style "float: right;"}
@@ -83,12 +90,11 @@
              [:a.tab.tab-xs {:class cls
                              :on-click #(set-tab! tab-name)} tab-label]]]
            [:div.card.ml-4
-            (case tab
-              :code (h/html
-                     [:div
-                      [:div.badge.badge-primary.badge-xs (h/out! (str ns))]
-                      [:pre [:code code-str]]])
-              :edn (edn/edn value)
+            (if (= tab :code)
+              (h/html
+               [:div
+                [:div.badge.badge-primary.badge-xs (h/out! (str ns))]
+                [:pre [:code code-str]]])
               ;; Tab is the visualizer impl, call it
               (binding [repl/*result-id* id]
                 (p/render tab value)))]]))]
