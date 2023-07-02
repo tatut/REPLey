@@ -13,6 +13,8 @@ this in a production app.
 
 ## Demos
 
+Watch the  [YouTube intro video](https://youtu.be/UiRq97HZctQ).
+
 ### Inspecting properties map as a table
 
 Clojure maps have a table visualization for convenient inspection.
