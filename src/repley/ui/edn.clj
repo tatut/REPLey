@@ -2,12 +2,18 @@
   "Pretty HTML rendering of arbitrary EDN."
   (:require [ripley.html :as h]
             [ripley.live.source :as source]
-            [repley.ui.edn :as edn]))
+            [repley.ui.edn :as edn]
+            [repley.repl :as repl]
+            [clojure.string :as str]))
 
 ;; Keep track of how much visible (non-markup) output has been
 ;; written so far... when we reach max-output, stop rendering
 ;; more and show links to expand
 (def ^{:private true :dynamic true} *truncate* nil)
+
+;; When *top* is true, set on-click handlers that navigate
+;; deeper into collections
+(def ^{:private true :dynamic true} *top* false)
 
 (defn- truncate-state [max-output]
   (atom {:output 0
@@ -39,7 +45,15 @@
           (h/dyn! string)
           (swap! *truncate* update :output + len))))))
 
+
 (defmulti render (fn [_ctx item] (type item)))
+
+(defn- render-top [ctx item]
+  (binding [*top* true] (render ctx item)))
+
+(defn- render-nested [ctx item]
+  (binding [*top* false] (render ctx item)))
+
 (defmulti summary (fn [_ctx item] (type item)))
 (defmulti summarize? (fn [item] (type item)))
 
@@ -55,10 +69,19 @@
 (defmethod render clojure.lang.Keyword [_ctx kw]
   (h/html [:span.text-emerald-700 (visible (pr-str kw))]))
 
+(defn- nav [key]
+  (when *top*
+    (str "_nav(" repl/*result-id* ",'"
+         (-> key pr-str
+             (str/replace "\\" "\\\\")
+             (str/replace "'" "\\'"))
+         "')")))
+
 (defn- collection [{render-item :render-item :as ctx
-                    :or {render-item render}}
+                    :or {render-item render-nested}}
                    before after items]
-  (let [cls (str "inline-flex space-x-2 flex-wrap "
+  (let [id repl/*result-id*
+        cls (str "inline-flex space-x-2 flex-wrap "
                  (if (every? map? items)
                    "flex-col"
                    "flex-row"))]
@@ -66,9 +89,11 @@
      [:div.flex
       (visible before)
       [:div {:class cls}
-       [::h/for [v items
-                 :when (not (truncated?))]
-        [:div.inline-block (render-item (dissoc ctx :render-item) v)]]]
+       [::h/for [[i v] (map-indexed vector items)
+                 :when (not (truncated?))
+                 :let [cls (when *top* "hover:bg-primary")]]
+        [:div.inline-block {:class cls :on-click (nav i)}
+         (render-item (dissoc ctx :render-item) v)]]]
       (visible after)])))
 
 (defmethod render clojure.lang.PersistentVector [ctx vec]
@@ -85,19 +110,23 @@
     (h/html [:div.inline-block (visible "{}")])
     (let [entries (seq m)
           normal-entries (butlast entries)
-          last-entry (last entries)]
+          last-entry (last entries)
+          hover (when *top*
+                  "hover:bg-primary")]
       (h/html
        [:div.inline-block.flex
         (visible "{")
         [:table
          [::h/for [[key val] normal-entries
                    :when (not (truncated?))]
-          [:tr.whitespace-pre
-           [:td.align-top.py-0.pl-0.pr-2 (render ctx key)]
-           [:td.align-top.p-0 (render ctx val)]]]
-         [:tr.whitespace-pre
-          [:td.align-top.py-0.pl-0.pr-2 (render ctx (key last-entry))]
-          [:td.align-top.p-0 [:div.inline-block (render ctx (val last-entry))]
+          [:tr.whitespace-pre {:class hover :on-click (nav key)}
+           [:td.align-top.py-0.pl-0.pr-2
+            (render-nested ctx key)]
+           [:td.align-top.p-0
+            (render-nested ctx val)]]]
+         [:tr.whitespace-pre {:class hover :on-click (nav (key last-entry))}
+          [:td.align-top.py-0.pl-0.pr-2 (render-nested ctx (key last-entry))]
+          [:td.align-top.p-0 [:div.inline-block (render-nested ctx (val last-entry))]
            (visible "}")]]]]))))
 
 (defmethod render clojure.lang.Var [ctx v]
@@ -167,9 +196,9 @@
                 [:div
                  [::h/if (not (summarize? thing))
                   [:div.my-2
-                   (render ctx thing)
+                   (render-top ctx thing)
                    (expand)]
                   [:details {:open true}
                    [:summary (summary ctx thing)]
-                   (render ctx thing)
+                   (render-top ctx thing)
                    (expand)]]]))))]]]))))
