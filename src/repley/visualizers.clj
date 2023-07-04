@@ -133,12 +133,55 @@
         (edn/edn data))
       (ring-handler [_] nil))))
 
+(defn throwable-visualizer [_ {enabled? :enabled?}]
+  (when enabled?
+    (reify p/Visualizer
+      (label [_] "Throwable")
+      (supports? [_ ex] (instance? java.lang.Throwable ex))
+      (precedence [_] 100)
+      (render [_ ex]
+        (let [id repl/*result-id*
+              type-label (.getName (type ex))
+              msg (ex-message ex)
+              data (ex-data ex)
+              trace (.getStackTrace ex)
+              cause (.getCause ex)
+              cause-label (when cause
+                            (str (.getName (type cause)) ": "
+                                 (.getMessage cause)))]
+          (h/html
+           [:div
+            [:div [:b "Type: "] type-label]
+            [:div [:b "Message:​ "] msg]
+            [::h/when cause-label
+             [:div [:b "Cause: "]
+              [:a {:on-click #(repl/nav-by! id
+                                            (constantly
+                                             {:label (.getName (type cause))
+                                              :value cause}))}
+               cause-label]]]
+            [::h/when (seq data)
+             [:div [:b "Data​ "]
+              (edn/edn data)]]
+            [:div [:b "Stack trace​ "]
+             [:details
+              [:summary (h/out! (count trace) " stack trace lines")]
+              [:ul
+               [::h/for [st trace
+                         :let [cls (.getClassName st)
+                               method (.getMethodName st)
+                               file (.getFileName st)
+                               line (.getLineNumber st)]]
+                [:li cls "." method " (" file ":" line ")"]]]]]])))
+      (ring-handler [_] nil))))
+
 (def default-options
   {:visualizers
    {:edn-visualizer {:enabled? true}
     :table-visualizer {:enabled? true}
     :file-visualizer {:enabled? true
-                      :allow-download? true}}})
+                      :allow-download? true}
+    :throwable-visualizer {:enabled? true}}})
 
 (defn default-visualizers
   [opts]
@@ -146,4 +189,5 @@
     (remove nil?
             [(edn-visualizer opts (:edn-visualizer v))
              (table-visualizer opts (:table-visualizer v))
-             (file-visualizer opts (:file-visualizer v))])))
+             (file-visualizer opts (:file-visualizer v))
+             (throwable-visualizer opts (:throwable-visualizer v))])))

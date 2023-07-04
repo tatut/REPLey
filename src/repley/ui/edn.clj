@@ -1,7 +1,8 @@
 (ns repley.ui.edn
   "Pretty HTML rendering of arbitrary EDN."
   (:require [ripley.html :as h]
-            [ripley.live.source :as source]))
+            [ripley.live.source :as source]
+            [repley.ui.edn :as edn]))
 
 ;; Keep track of how much visible (non-markup) output has been
 ;; written so far... when we reach max-output, stop rendering
@@ -128,7 +129,7 @@
     (let [ex-type (.getName (type ex))
           ex-msg (.getMessage ex)]
       (h/html
-       [:div.text-red-500.inline ex-msg]))))
+       [:div.text-red-500.inline ex-type ": " ex-msg]))))
 
 (defmethod summary :default [ctx thing]
   (h/out! (str (type thing)) " instance"))
