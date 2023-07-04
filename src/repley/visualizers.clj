@@ -175,13 +175,35 @@
                 [:li cls "." method " (" file ":" line ")"]]]]]])))
       (ring-handler [_] nil))))
 
+(defn- chart-supports? [_opts x]
+  (and (map? x)
+       (every? number? (take sample-size (vals x)))))
+
+(defn- chart-render [_opts data]
+  (h/html
+   [:div.chart
+    (chart/bar-chart
+     {:label-accessor (comp str key)
+      :value-accessor val}
+     (source/static data))]))
+
+(defn chart-visualizer [_ {enabled? :enabled? :as opts}]
+  (when enabled?
+    (reify p/Visualizer
+      (label [_] "Chart")
+      (supports? [_ data] (chart-supports? opts data))
+      (precedence [_] 0)
+      (render [_ data] (chart-render opts data))
+      (ring-handler [_] nil))))
+
 (def default-options
   {:visualizers
    {:edn-visualizer {:enabled? true}
     :table-visualizer {:enabled? true}
     :file-visualizer {:enabled? true
                       :allow-download? true}
-    :throwable-visualizer {:enabled? true}}})
+    :throwable-visualizer {:enabled? true}
+    :chart-visualizer {:enabled? true}}})
 
 (defn default-visualizers
   [opts]
@@ -190,4 +212,5 @@
             [(edn-visualizer opts (:edn-visualizer v))
              (table-visualizer opts (:table-visualizer v))
              (file-visualizer opts (:file-visualizer v))
-             (throwable-visualizer opts (:throwable-visualizer v))])))
+             (throwable-visualizer opts (:throwable-visualizer v))
+             (chart-visualizer opts (:chart-visualizer v))])))
