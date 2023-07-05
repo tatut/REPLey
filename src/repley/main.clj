@@ -130,7 +130,11 @@
         "editor.focus();"
 
         ;; Add mutation observer to scroll new evaluations into view
-        "let mo = new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.scrollIntoView())));"
+        ;; (not changed ones)
+        "let mo = new MutationObserver(ms => { ms.forEach(m => { "
+        " let ids = new Set(); "
+        " m.removedNodes.forEach(n => ids.add(n.getAttribute('data-rl'))); "
+        " m.addedNodes.forEach(n => { if(!ids.has(n.getAttribute('data-rl'))) n.scrollIntoView(false) });})});"
         "mo.observe(document.querySelector('span.repl-output'), {childList: true});"
         " }"]
        (h/live-client-script (str prefix "/_ws"))]
@@ -142,7 +146,12 @@
           {:source (source/computed :results repl/repl-data)
            :render (partial evaluation visualizers)
            :key :id
-           :container-element :span.repl-output})]
+           :container-element :span.repl-output})
+
+         ;; Add filler element so we always have scroll
+         ;; and navigating doesn't make results jump around.
+         [:div {:style {:height "80vh;"}}]
+         ]
 
         [:div.m-2.border {:style "height: 15vh;"}
          [:textarea#repl.w-full ""]]]]])))
