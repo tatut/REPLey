@@ -1,10 +1,14 @@
-(ns repley.shadow.remote)
+(ns repley.shadow.remote
+  (:require [repley.config :as config]))
+
+(def default-port
+  (get-in config/default-config [:http :port]))
 
 (defn make-send [fetch]
   (fn submit
     ([value] (submit nil value))
     ([{:keys [port mode]
-       :or   {port 3001 ;; TODO: use repley.config/default-config
+       :or   {port default-port
               mode "cors"}}
       value]
      (fetch (str "http://localhost:" port "/receive")
