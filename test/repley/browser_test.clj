@@ -46,22 +46,22 @@
 
   ;; descend deeper into result
   (w/click (w/find-one-by-text "td" ":hello"))
-  (is (breadcrumbs) ";:hello")
+  (is (= (breadcrumbs) ";:hello;"))
   (w/click (w/find-one-by-text "td" ":there"))
-  (is (breadcrumbs) ";:hello;:there")
+  (is (= (breadcrumbs) ";:hello;:there;"))
   (w/click (w/find-one-by-text "td" ":my"))
-  (is (breadcrumbs) ";:hello;:there;:my")
+  (is (= (breadcrumbs) ";:hello;:there;:my;"))
   ;;(w/click "") ;; drill down from table
   (w/click (w/find-one-by-text "span" "\"friend\""))
-  (is (breadcrumbs) ";:hello;:there;:my;0")
+  (is (= (breadcrumbs) ";:hello;:there;:my;0;"))
 
   ;; drill back to :hello
   (w/click (w/find-one-by-text "li" ":hello"))
-  (is (breadcrumbs) ";:hello")
+  (is (= (breadcrumbs) ";:hello;"))
 
   ;; drill back to home, breadcrumbs disappear
   (w/click "div.breadcrumbs li:nth-child(1)")
-  (is (breadcrumbs) ""))
+  (is (= (breadcrumbs) "")))
 
 (deftest table-data-escaped
   (eval-in-repl "{:foo 1 :bar \"<script>alert(2)</script>\"}")
