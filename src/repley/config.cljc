@@ -32,4 +32,13 @@
   "Get the full configuration. Deeply merges given
   opts to the default configuration."
   [opts]
-  (merge-with merge default-config opts))
+  (merge-with (fn merge-strategy [a b]
+                (cond
+                  (and (map? a) (map? b))
+                  (merge-with merge-strategy a b)
+
+                  (some? b)
+                  b
+
+                  :else
+                  a)) default-config opts))
