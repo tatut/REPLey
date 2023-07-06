@@ -156,7 +156,7 @@
 
          ;; Add filler element so we always have scroll
          ;; and navigating doesn't make results jump around.
-         [:div {:style {:height "80vh;"}}]]
+         [:div {:style "height: 0vh;"}]]
 
         [:div.m-2.border {:style "height: 15vh;"}
          [:textarea#repl.w-full ""]]]]])))
