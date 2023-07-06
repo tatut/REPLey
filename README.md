@@ -2,7 +2,7 @@
 
 ![test workflow](https://github.com/tatut/repley/actions/workflows/test.yml/badge.svg)
 
-A web REPL made with Ripley
+A web REPL made with [Ripley](https://github.com/tatut/ripley)
 
 ## Usage
 
