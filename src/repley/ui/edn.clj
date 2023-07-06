@@ -80,8 +80,7 @@
 (defn- collection [{render-item :render-item :as ctx
                     :or {render-item render-nested}}
                    before after items]
-  (let [id repl/*result-id*
-        cls (str "inline-flex space-x-2 flex-wrap "
+  (let [cls (str "inline-flex space-x-2 flex-wrap "
                  (if (every? map? items)
                    "flex-col"
                    "flex-row"))]
@@ -183,14 +182,16 @@
 (defn edn
   ([thing] (edn {} thing))
   ([ctx thing]
-   (let [[max-output-source set-max-output!] (source/use-state initial-max-output)]
+   (let [[max-output-source set-max-output!] (source/use-state initial-max-output)
+         id repl/*result-id*]
      (h/html
       [:div
        [::h/if (nil? thing)
         [:span.nil "nil"]
         [::h/live max-output-source
          (fn [max-output]
-           (binding [*truncate* (truncate-state max-output)]
+           (binding [*truncate* (truncate-state max-output)
+                     repl/*result-id* id]
              (let [expand (partial expand-buttons max-output set-max-output!)]
                (h/html
                 [:div
