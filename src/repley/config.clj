@@ -10,6 +10,12 @@
    ;; a different root path.
    :prefix ""
 
+   ;; Receive endpoint, use nil to disable
+   ;; The receive endpoint can take POSTed EDN values and add them
+   ;; as results. This makes it possible to integrate REPLey to
+   ;; ClojureScript by sending tap> values over HTTP.
+   :receive-endpoint "/receive"
+
    ;; Timestamp format, if non-nil, a timestamp is shown for each result.
    :timestamp-format "yyyy-MM-dd HH:mm:ss.SSS"
 

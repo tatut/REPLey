@@ -163,15 +163,11 @@
 
 (defn repley-handler
   "Return a Reply ring handler.
-  The following configuration options are supported:
 
-  - :prefix        prefix to use for all routes
-  - :visualizers   sequence of visualization implementations
-                   (see repley.protocols/Visualizer).
-                   These visualizers are added to the defaults.
-  "
+  See `#'repley.config/default-config` for a description of
+  all the configuration options available."
   [config]
-  (let [{:keys [prefix] :as opts} (config/config config)
+  (let [{:keys [prefix receive-endpoint] :as opts} (config/config config)
         ws-handler (context/connection-handler (str prefix "/_ws"))
         c (count prefix)
         ->path (fn [uri] (subs uri c))
@@ -190,6 +186,14 @@
 
           "/"
           (h/render-response #(repl-page opts visualizers prefix))
+
+          receive-endpoint
+          (when (= :post (:request-method req))
+            (binding [*read-eval* false]
+              (repl/add-result! {:timestamp (java.util.Date.)
+                                 :code-str ";; received via HTTP"
+                                 :result (read-string (slurp (:body req)))})
+              {:status 204}))
 
           ;; Try visualizer handlers
           (visualizer-handlers req))))))
