@@ -1,5 +1,7 @@
 # REPLey
 
+![test workflow](https://github.com/tatut/repley/actions/workflows/test.yml/badge.svg)
+
 A web REPL made with Ripley
 
 ## Usage
@@ -21,9 +23,9 @@ Clojure maps have a table visualization for convenient inspection.
 ![Props map as table](https://github.com/tatut/REPLey/assets/83725/6bdd7db7-6c30-4680-8bbf-e0ea9489eef2)
 
 
-### File visualizer 
+### File visualizer
 
-Instances of `java.io.File` class have a visualizer that shows basic info and allows 
+Instances of `java.io.File` class have a visualizer that shows basic info and allows
 downloading the file. This can be disabled in config.
 
 ![File visualizer](https://github.com/tatut/REPLey/assets/83725/135efabf-daf7-4ba6-9706-8b053bafea91)
@@ -33,4 +35,3 @@ downloading the file. This can be disabled in config.
 CSV read by `clojure.data.csv` is also supported in the table visualizer.
 
 ![CSV table](https://github.com/tatut/REPLey/assets/83725/84df15cc-bc93-4cac-89ea-4229eecffbc8)
-
