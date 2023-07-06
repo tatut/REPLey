@@ -34,7 +34,7 @@
   (w/wait "table.table")
   (is (= 20 (w/count* (w/query "table.table tbody tr"))))
   (w/fill [:evaluation "input"] "Fiji")
-  (Thread/sleep 200)
+  (Thread/sleep 500)
   (is (= 1 (w/count* (w/query "table.table tbody tr")))))
 
 (defn breadcrumbs []
