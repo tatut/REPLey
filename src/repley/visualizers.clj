@@ -196,18 +196,9 @@
       (render [_ data] (chart-render opts data))
       (ring-handler [_] nil))))
 
-(def default-options
-  {:visualizers
-   {:edn-visualizer {:enabled? true}
-    :table-visualizer {:enabled? true}
-    :file-visualizer {:enabled? true
-                      :allow-download? true}
-    :throwable-visualizer {:enabled? true}
-    :chart-visualizer {:enabled? true}}})
-
 (defn default-visualizers
   [opts]
-  (let [{v :visualizers :as opts} (merge-with merge default-options opts)]
+  (let [{v :visualizers :as opts} opts]
     (remove nil?
             [(edn-visualizer opts (:edn-visualizer v))
              (table-visualizer opts (:table-visualizer v))

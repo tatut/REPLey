@@ -9,8 +9,8 @@
             [ripley.live.collection :as collection]
             [ripley.live.source :as source]
             [ripley.js :as js]
-            [repley.ui.edn :as edn]
             [repley.visualizers :as visualizers]
+            [repley.config :as config]
             [repley.ui.icon :as icon]
             [clojure.datafy :as df]
             [repley.repl :as repl]))
@@ -55,9 +55,10 @@
                     acc)))
               {} vs)))
 
+
 (defn evaluation
   "Ripley component that renders one evaluated result"
-  [visualizers {:keys [id code-str ns result breadcrumbs]}]
+  [{:keys [timestamp-format] :as _opts} visualizers {:keys [id code-str ns result breadcrumbs timestamp duration]}]
   (let [value (display result)
         supported-visualizers (filter #(p/supports? % value) visualizers)
         tabs (into [[:code "Code"]]
@@ -76,6 +77,11 @@
        (fn [tab]
          (h/html
           [:div
+           [::h/when timestamp-format
+            [:div.badge.badge-ghost.badge-xs
+             (h/dyn! (.format (java.text.SimpleDateFormat. timestamp-format)
+                              timestamp))
+             (when duration (h/dyn! " (took " duration " ms)"))]]
            [::h/when (seq breadcrumbs)
             [:div.text-sm.breadcrumbs.ml-4
              [:ul
@@ -100,7 +106,7 @@
                 (p/render tab value)))]]))]
       [:div.divider]])))
 
-(defn- repl-page [visualizers prefix]
+(defn- repl-page [opts visualizers prefix]
   (h/out! "<!DOCTYPE html>\n")
   (let [css (str prefix "/repley.css")]
     (h/html
@@ -144,30 +150,29 @@
         [:div {:style "height: 80vh; overflow-y: auto;"}
          (collection/live-collection
           {:source (source/computed :results repl/repl-data)
-           :render (partial evaluation visualizers)
+           :render (partial evaluation opts visualizers)
            :key :id
            :container-element :span.repl-output})
 
          ;; Add filler element so we always have scroll
          ;; and navigating doesn't make results jump around.
-         [:div {:style {:height "80vh;"}}]
-         ]
+         [:div {:style {:height "80vh;"}}]]
 
         [:div.m-2.border {:style "height: 15vh;"}
          [:textarea#repl.w-full ""]]]]])))
 
 (defn repley-handler
   "Return a Reply ring handler.
-  The following options are supported:
+  The following configuration options are supported:
 
   - :prefix        prefix to use for all routes
   - :visualizers   sequence of visualization implementations
                    (see repley.protocols/Visualizer).
                    These visualizers are added to the defaults.
   "
-  [{:keys [prefix] :as opts
-    :or {prefix ""}}]
-  (let [ws-handler (context/connection-handler (str prefix "/_ws"))
+  [config]
+  (let [{:keys [prefix] :as opts} (config/config config)
+        ws-handler (context/connection-handler (str prefix "/_ws"))
         c (count prefix)
         ->path (fn [uri] (subs uri c))
         visualizers (visualizers/default-visualizers opts)
@@ -184,7 +189,7 @@
            :body (slurp (io/resource "public/repley.css"))}
 
           "/"
-          (h/render-response #(repl-page visualizers prefix))
+          (h/render-response #(repl-page opts visualizers prefix))
 
           ;; Try visualizer handlers
           (visualizer-handlers req))))))

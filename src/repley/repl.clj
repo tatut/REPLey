@@ -12,12 +12,18 @@
 (defonce repl-data (atom initial-repl-data))
 
 (defn- eval-result [ns code-str]
-  {:ns ns
-   :code-str code-str
-   :result (try (binding [*ns* ns]
-                  (load-string code-str))
-                (catch Throwable t
-                  t))})
+  (let [timestamp (java.util.Date.)
+        start (System/currentTimeMillis)
+        result (try (binding [*ns* ns]
+                      (load-string code-str))
+                    (catch Throwable t
+                      t))
+        duration (- (System/currentTimeMillis) start)]
+    {:ns ns
+     :code-str code-str
+     :result result
+     :timestamp timestamp
+     :duration duration}))
 
 (defn clear!
   "Clear all REPL evaluations."
@@ -32,7 +38,9 @@
                      {:id id}))))
 
 (defn add-result! [result]
-  (swap! repl-data add-result result))
+  (swap! repl-data add-result
+         (merge {:timestamp (java.util.Date.)}
+                result)))
 
 (defn- eval-input [{:keys [ns] :as repl} code-str]
   (add-result repl (eval-result ns code-str)))
