@@ -13,7 +13,8 @@
             [repley.config :as config]
             [repley.ui.icon :as icon]
             [clojure.datafy :as df]
-            [repley.repl :as repl]))
+            [repley.repl :as repl]
+            [clojure.edn :as edn]))
 
 (defn listen-to-tap>
   "Install Clojure tap> listener. All values sent via tap> are
@@ -167,7 +168,7 @@
   See `#'repley.config/default-config` for a description of
   all the configuration options available."
   [config]
-  (let [{:keys [prefix receive-endpoint] :as opts} (config/config config)
+  (let [{:keys [prefix receive-endpoint edn-readers] :as opts} (config/config config)
         ws-handler (context/connection-handler (str prefix "/_ws"))
         c (count prefix)
         ->path (fn [uri] (subs uri c))
@@ -192,7 +193,8 @@
             (binding [*read-eval* false]
               (repl/add-result! {:timestamp (java.util.Date.)
                                  :code-str ";; received via HTTP"
-                                 :result (read-string (slurp (:body req)))})
+                                 :result (edn/read-string {:readers edn-readers}
+                                                          (slurp (:body req)))})
               {:status 204}))
 
           ;; Try visualizer handlers
