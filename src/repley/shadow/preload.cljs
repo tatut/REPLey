@@ -4,9 +4,9 @@
    [repley.shadow.remote :as r]
    goog.object))
 
-(let [port (-> (goog.object/get js/CLOSURE_DEFINES "repley.shadow.build.opts")
-               (js->clj :keywordize-keys true)
-               (get-in [:http :port]))
-      opts (cond-> {:mode "no-cors"}
-             port (assoc :port port))]
-  (add-tap (partial r/send opts)))
+(def build-opts
+  (-> (goog.object/get js/CLOSURE_DEFINES "repley.shadow.build.opts")
+      (js->clj :keywordize-keys true)
+      r/config->fetch-opts))
+
+(add-tap (partial r/send (merge build-opts {:mode "no-cors"})))
