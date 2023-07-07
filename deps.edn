@@ -1,7 +1,8 @@
 {:paths ["src" "resources"]
  :deps {tatut/ripley {:git/url "https://github.com/tatut/ripley.git"
-                      :sha "1d6a1dbb5b1c12b29d96eec125d05c88f6f09ba2"}
-        http-kit/http-kit {:mvn/version "2.6.0"}}
+                      :sha "cba08fef2e01fd859d8123e4bfa34f8cbf325147"}
+        http-kit/http-kit {:mvn/version "2.6.0"}
+        compliment {:mvn/version "0.4.0"}}
  :aliases {:dev {:extra-paths ["dev-src" "test"]
                  :extra-deps {org.clojure/data.csv {:mvn/version "1.0.1"}
                               io.github.pfeodrippe/wally {:mvn/version "0.0.4"}}}
