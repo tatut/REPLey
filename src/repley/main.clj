@@ -14,7 +14,8 @@
             [repley.ui.icon :as icon]
             [clojure.datafy :as df]
             [repley.repl :as repl]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [compliment.core :as compliment]))
 
 (defn listen-to-tap>
   "Install Clojure tap> listener. All values sent via tap> are
@@ -107,6 +108,16 @@
                 (p/render tab value)))]]))]
       [:div.divider]])))
 
+(defn- complete
+  "Get completions for prefix and output them in format suitable for Ace9 editor."
+  [prefix]
+  (for [{:keys [candidate type]} (compliment/completions prefix
+                                                         {:ns (repl/current-repl-ns)})]
+    {:name candidate
+     :value candidate
+     :score 100
+     :meta (name type)}))
+
 (defn- repl-page [opts visualizers prefix]
   (h/out! "<!DOCTYPE html>\n")
   (let [css (str prefix "/repley.css")]
@@ -115,26 +126,47 @@
       [:head
        [:meta {:charset "UTF-8"}]
        [:link {:rel "stylesheet" :href css}]
-       [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.js"}]
-       [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/mode/clojure/clojure.min.js"}]
-       [:link {:rel :stylesheet :href "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.css"}]
+       [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ace.min.js"}]
+       [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ext-language_tools.min.js"}]
        (js/export-callbacks
         {:_eval repl/eval-input!
          :_crumb repl/nav-to-crumb!
          :_nav  (fn [id k]
-                  (repl/nav! id (read-string k)))})
+                  (repl/nav! id (read-string k)))
+         :_complete (-> (js/js complete)
+                        (js/on-success "cs=>_COMPLETIONS(cs)"))})
        [:script
         "function initREPL() {"
-        "let editor = CodeMirror.fromTextArea(document.getElementById('repl'), {"
-        "lineNumbers: true,"
-        "autoCloseBrackets: true,"
-        "matchBrackets: true,"
-        "mode: 'text/x-clojure',"
-        "extraKeys: {'Cmd-Enter': e => _eval(e.doc.getValue())}"
+        "let lt = ace.require('ace/ext/language_tools');"
+        "lt.addCompleter({getCompletions: function(editor, session, pos, prefix, callback) {"
+        "  if (prefix.length === 0) { callback(null, []); } "
+        "  else { window._COMPLETIONS= cs => callback(null, cs); _complete(prefix); }"
+        "},"
+        ;; FIXME: is this enough?
+        ;; colon, dot, word, digit, slash, dash, underscore, dollar, question mark, asterisk
+        " identifierRegexps: [ /[\\:\\.\\w\\d\\/\\-\\_\\$\\?\\*]+/ ]"
         "});"
-        "editor.setSize('100%', '100%');"
-        "window._repley_editor = editor;"
-        "editor.focus();"
+        "let editor = ace.edit('repl'); "
+        "editor.commands.addCommand({"
+        " name: 'eval',"
+        " bindKey: {"
+        "  win: 'Ctrl-Enter',"
+        "  mac: 'Command-Enter'"
+        " },"
+        " exec: function(editor) {"
+        "   _eval(editor.session.getValue());"
+        " },"
+        " readOnly: true});"
+        "editor.session.setMode('ace/mode/clojure');"
+        "editor.setTheme('ace/theme/tomorrow');"
+        "editor.setOptions({"
+        "  enableBasicAutocompletion: true,"
+        "  enableSnippets: true,"
+        "  enableLiveAutocompletion: true, "
+        "  liveAutocompletionDelay: 300, "
+        "  liveAutocompletionThreshold: 3"
+        "});"
+        "window._E = editor;"
 
         ;; Add mutation observer to scroll new evaluations into view
         ;; (not changed ones)
@@ -160,7 +192,7 @@
          [:div {:style "height: 0vh;"}]]
 
         [:div.m-2.border {:style "height: 15vh;"}
-         [:textarea#repl.w-full ""]]]]])))
+         [:pre#repl.w-full.h-full ""]]]]])))
 
 (defn repley-handler
   "Return a Reply ring handler.

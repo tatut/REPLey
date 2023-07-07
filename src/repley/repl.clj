@@ -108,3 +108,6 @@
                   (fn [{:keys [ns code-str] :as old-result}]
                     (merge old-result
                            (eval-result ns code-str)))))
+
+(defn current-repl-ns []
+  (-> repl-data deref :ns))
