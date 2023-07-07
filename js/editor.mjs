@@ -16,26 +16,26 @@ function evalKeymap(evalfn) {
     }];
 }
 
-export function initREPL(evalfn) {
+export function initREPL(evalfn, completionfn) {
     let repl = new EditorView({
         doc: "",
         extensions: [
-            lineNumbers(),
-            highlightActiveLineGutter(),
-            highlightSpecialChars(),
-            history(),
-            foldGutter(),
-            drawSelection(),
-            dropCursor(),
-            EditorState.allowMultipleSelections.of(true),
-            indentOnInput(),
-            syntaxHighlighting(defaultHighlightStyle, {fallback: true}),
-            bracketMatching(),
-            closeBrackets(),
-            autocompletion(),
-            rectangularSelection(),
-            crosshairCursor(),
-            highlightActiveLine(),
+            //lineNumbers(),
+            //highlightActiveLineGutter(),
+            //highlightSpecialChars(),
+            //history(),
+            //foldGutter(),
+            //drawSelection(),
+            //dropCursor(),
+            //EditorState.allowMultipleSelections.of(true),
+            //indentOnInput(),
+            //syntaxHighlighting(defaultHighlightStyle, {fallback: true}),
+            //bracketMatching(),
+            //closeBrackets(),
+            autocompletion({override: [completionfn]}),
+            //rectangularSelection(),
+            //crosshairCursor(),
+            //highlightActiveLine(),
             //        highlightSelectionMatches(),
             keymap.of([
                 ...(evalKeymap(evalfn)),

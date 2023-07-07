@@ -123,6 +123,7 @@
          :_nav  (fn [id k]
                   (repl/nav! id (read-string k)))})
        [:script
+        "function complete(ctx) { console.log('complete: ', ctx); return {options: [{from: ctx.pos, to: ctx.pos, label: \"assoc\"}]} }"
         "function initREPL() {"
           ;;"let editor = CodeMirror.fromTextArea(document.getElementById('repl'), {"
         ;;"lineNumbers: true,"
@@ -131,7 +132,7 @@
          ;; "mode: 'text/x-clojure',"
         ;;  "extraKeys: {'Cmd-Enter': e => _eval(e.doc.getValue())}"
         ;;  "});"
-        "let editor = repl.initREPL(_eval);"
+        "let editor = repl.initREPL(_eval, complete);"
         ;;"editor.setSize('100%', '100%');"
         "window._repley_editor = editor;"
         "editor.focus();"
@@ -148,7 +149,7 @@
       [:body {:on-load "initREPL()"}
        [:div "REPLey"]
        [:div.flex.flex-col
-        [:div {:style "height: 80vh; overflow-y: auto;"}
+        [:div {:style "height: 50vh; overflow-y: auto;"}
          (collection/live-collection
           {:source (source/computed :results repl/repl-data)
            :render (partial evaluation opts visualizers)
@@ -159,7 +160,7 @@
          ;; and navigating doesn't make results jump around.
          [:div {:style "height: 0vh;"}]]
 
-        [:div.m-2.border {:id "repl-container" :style "height: 15vh;"}
+        [:div.m-2.border {:id "repl-container" :style "height: 45vh;"}
          #_[:textarea#repl.w-full ""]]]]])))
 
 (defn repley-handler
