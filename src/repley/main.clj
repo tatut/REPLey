@@ -115,9 +115,8 @@
       [:head
        [:meta {:charset "UTF-8"}]
        [:link {:rel "stylesheet" :href css}]
-       [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.js"}]
-       [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/mode/clojure/clojure.min.js"}]
-       [:link {:rel :stylesheet :href "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.css"}]
+       [:script {:src "editor.js"}]
+       [:link {:rel :stylesheet :href "https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css"}]
        (js/export-callbacks
         {:_eval repl/eval-input!
          :_crumb repl/nav-to-crumb!
@@ -125,25 +124,26 @@
                   (repl/nav! id (read-string k)))})
        [:script
         "function initREPL() {"
-        "let editor = CodeMirror.fromTextArea(document.getElementById('repl'), {"
-        "lineNumbers: true,"
-        "autoCloseBrackets: true,"
-        "matchBrackets: true,"
-        "mode: 'text/x-clojure',"
-        "extraKeys: {'Cmd-Enter': e => _eval(e.doc.getValue())}"
-        "});"
-        "editor.setSize('100%', '100%');"
+          ;;"let editor = CodeMirror.fromTextArea(document.getElementById('repl'), {"
+        ;;"lineNumbers: true,"
+         ;; "autoCloseBrackets: true,"
+         ;; "matchBrackets: true,"
+         ;; "mode: 'text/x-clojure',"
+        ;;  "extraKeys: {'Cmd-Enter': e => _eval(e.doc.getValue())}"
+        ;;  "});"
+        "let editor = repl.initREPL(_eval);"
+        ;;"editor.setSize('100%', '100%');"
         "window._repley_editor = editor;"
         "editor.focus();"
 
-        ;; Add mutation observer to scroll new evaluations into view
-        ;; (not changed ones)
-        "let mo = new MutationObserver(ms => { ms.forEach(m => { "
-        " let ids = new Set(); "
-        " m.removedNodes.forEach(n => ids.add(n.getAttribute('data-rl'))); "
-        " m.addedNodes.forEach(n => { if(!ids.has(n.getAttribute('data-rl'))) n.scrollIntoView(false) });})});"
-        "mo.observe(document.querySelector('span.repl-output'), {childList: true});"
-        " }"]
+          ;; Add mutation observer to scroll new evaluations into view
+          ;; (not changed ones)
+          "let mo = new MutationObserver(ms => { ms.forEach(m => { "
+          " let ids = new Set(); "
+          " m.removedNodes.forEach(n => ids.add(n.getAttribute('data-rl'))); "
+          " m.addedNodes.forEach(n => { if(!ids.has(n.getAttribute('data-rl'))) n.scrollIntoView(false) });})});"
+          "mo.observe(document.querySelector('span.repl-output'), {childList: true});"
+          " }"]
        (h/live-client-script (str prefix "/_ws"))]
       [:body {:on-load "initREPL()"}
        [:div "REPLey"]
@@ -159,8 +159,8 @@
          ;; and navigating doesn't make results jump around.
          [:div {:style "height: 0vh;"}]]
 
-        [:div.m-2.border {:style "height: 15vh;"}
-         [:textarea#repl.w-full ""]]]]])))
+        [:div.m-2.border {:id "repl-container" :style "height: 15vh;"}
+         #_[:textarea#repl.w-full ""]]]]])))
 
 (defn repley-handler
   "Return a Reply ring handler.
@@ -184,6 +184,10 @@
           "/repley.css"
           {:status 200 :headers {"Content-Type" "text/css"}
            :body (slurp (io/resource "public/repley.css"))}
+
+          "/editor.js"
+          {:status 200 :headers {"Content-Type" "text/javascript"}
+           :body (slurp (io/resource "public/editor.js"))}
 
           "/"
           (h/render-response #(repl-page opts visualizers prefix))
