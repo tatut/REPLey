@@ -111,7 +111,8 @@
 (defn- complete
   "Get completions for prefix and output them in format suitable for Ace9 editor."
   [prefix]
-  (for [{:keys [candidate type]} (compliment/completions prefix)]
+  (for [{:keys [candidate type]} (compliment/completions prefix
+                                                         {:ns (repl/current-repl-ns)})]
     {:name candidate
      :value candidate
      :score 100
