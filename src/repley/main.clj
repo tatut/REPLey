@@ -128,6 +128,12 @@
        [:link {:rel "stylesheet" :href css}]
        [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ace.min.js"}]
        [:script {:src "https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ext-language_tools.min.js"}]
+       (doseq [v visualizers
+               :let [{:keys [js css]} (p/assets v)]]
+         (doseq [script js]
+           (h/html [:script {:src script}]))
+         (doseq [style css]
+           (h/html [:link {:rel "stylesheet" :href style}])))
        (js/export-callbacks
         {:_eval repl/eval-input!
          :_crumb repl/nav-to-crumb!

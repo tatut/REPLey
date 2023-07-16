@@ -26,7 +26,8 @@
     :file-visualizer {:enabled? true
                       :allow-download? true}
     :throwable-visualizer {:enabled? true}
-    :chart-visualizer {:enabled? true}}})
+    :chart-visualizer {:enabled? true}
+    :vega-visualizer {:enabled? true}}})
 
 (defn config
   "Get the full configuration. Deeply merges given

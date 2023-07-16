@@ -7,7 +7,8 @@
             [ripley.live.source :as source]
             [ripley.html :as h]
             [repley.repl :as repl]
-            [repley.visualizer.file :as file]))
+            [repley.visualizer.file :as file]
+            [repley.visualizer.vega :as vega]))
 
 (def sample-size
   "How many items to check when testing collection items."
@@ -62,7 +63,8 @@
            {:columns columns
             :on-row-click on-row-click}
            data-source)))
-      (ring-handler [_] nil))))
+      (ring-handler [_] nil)
+      (assets [_] nil))))
 
 
 
@@ -74,7 +76,8 @@
       (precedence [_] 0)
       (render [_ data]
         (edn/edn data))
-      (ring-handler [_] nil))))
+      (ring-handler [_] nil)
+      (assets [_] nil))))
 
 (defn throwable-visualizer [_ {enabled? :enabled?}]
   (when enabled?
@@ -116,7 +119,8 @@
                                file (.getFileName st)
                                line (.getLineNumber st)]]
                 [:li cls "." method " (" file ":" line ")"]]]]]])))
-      (ring-handler [_] nil))))
+      (ring-handler [_] nil)
+      (assets [_] nil))))
 
 (defn- chart-supports? [_opts x]
   (and (map? x)
@@ -137,7 +141,8 @@
       (supports? [_ data] (chart-supports? opts data))
       (precedence [_] 0)
       (render [_ data] (chart-render opts data))
-      (ring-handler [_] nil))))
+      (ring-handler [_] nil)
+      (assets [_] nil))))
 
 (defn default-visualizers
   [opts]
@@ -147,4 +152,5 @@
              (table-visualizer opts (:table-visualizer v))
              (file/file-visualizer opts (:file-visualizer v))
              (throwable-visualizer opts (:throwable-visualizer v))
-             (chart-visualizer opts (:chart-visualizer v))])))
+             (chart-visualizer opts (:chart-visualizer v))
+             (vega/vega-visualizer opts (:vega-visualizer v))])))

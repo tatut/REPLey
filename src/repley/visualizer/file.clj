@@ -111,4 +111,5 @@
         (supports? [_ data] (supports? data))
         (precedence [_] 100)
         (render [_ data] (render config opts downloads data))
-        (ring-handler [_] (ring-handler config downloads))))))
+        (ring-handler [_] (ring-handler config downloads))
+        (assets [_] nil)))))

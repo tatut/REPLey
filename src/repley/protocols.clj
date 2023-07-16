@@ -13,4 +13,10 @@ shown by default.")
   (render [this data]
     "Render a Ripley component that visualizes the data.")
   (ring-handler [this]
-    "Optional ring handler if the visualizer exposes HTTP endpoints"))
+    "Optional ring handler if the visualizer exposes HTTP endpoints")
+  (assets [this]
+    "Return optional map of frontend assets to include in the page when
+this visualizer is enabled. This makes it possible to integrate JS based
+visualizations. Must return either nil or a map containing keys:
+  :js  a sequence of JavaScript script source URLs
+  :css a sequence of CSS sources"))
