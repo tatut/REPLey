@@ -9,10 +9,24 @@
         "https://cdnjs.cloudflare.com/ajax/libs/vega-lite/5.13.0/vega-lite.min.js"
         "https://cdnjs.cloudflare.com/ajax/libs/vega-embed/6.22.1/vega-embed.min.js"]})
 
+(defn- strip-vega-ns [m]
+  (into {}
+        (map (fn [[k v]]
+               (let [new-k (if (and (keyword? k)
+                                    (= "vega" (namespace k)))
+                             (keyword (name k))
+                             k)
+                     new-v (if (map? v)
+                             (strip-vega-ns v)
+                             v)]
+                 [new-k new-v])))
+        m))
+
 (defn- as-vega [data]
   (cheshire/encode
-   (merge {"$schema" "https://vega.github.io/schema/vega-lite/v5.json"}
-          data)))
+   (strip-vega-ns
+    (merge {"$schema" "https://vega.github.io/schema/vega-lite/v5.json"}
+           data))))
 
 (defn- render [_opts data]
   (let [id (gensym "vega")]
@@ -20,11 +34,9 @@
      [:div.m-4
       [:div {:id id}]
       [:script
-       "console.log('hello');"
        "vegaEmbed('#" id "', "
        (h/out! (as-vega data))
-       ", {renderer: 'svg'});"]
-      ])))
+       ", {renderer: 'svg'});"]])))
 
 (defn vega-visualizer [_ {enabled? :enabled? :as opts}]
   (when enabled?
@@ -63,7 +75,7 @@
                   :axis {:title "Average of b"}}}}
 
 
-  ^{:vega? true}
+  #:vega
   {:data
    {:values [{:category "A" :group "x" :value 0.1}
              {:category "A" :group "y" :value 0.6}
@@ -75,10 +87,10 @@
              {:category "C" :group "y" :value 0.1}
              {:category "C" :group "z" :value 0.2}]}
    :mark :bar
-   :encoding {:x {:field :category}
-              :y {:field :value :type :quantitative}
-              :xOffset {:field :group}
-              :color {:field :group}}}
+   :encoding #:vega {:x {:field :category}
+                     :y {:field :value :type :quantitative}
+                     :xOffset {:field :group}
+                     :color {:field :group}}}
 
 
   ^{:vega? true}
