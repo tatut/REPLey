@@ -1,11 +1,13 @@
 {
   "dependencies": {
-    "daisyui": "^3.1.6",
     "postcss-cli": "^10.1.0",
     "tailwindcss": "^3.3.2"
   },
   "scripts": {
     "tailwind": "tailwindcss -i resources/repley.css -o resources/public/repley.css --watch",
     "tailwindprod": "tailwindcss -i resources/repley.css -o resources/public/repley.css -m"
+  },
+  "devDependencies": {
+    "daisyui": "^3.5.0"
   }
 }
