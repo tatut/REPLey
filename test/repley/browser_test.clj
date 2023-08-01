@@ -79,20 +79,20 @@
   (is (not (.isChecked (w/-query ".tap-listener"))))
   (testing "tap> does not send result to REPL"
     (tap> 1)
-    (Thread/sleep 10)
+    (Thread/sleep 50)
     (is (zero? (evaluation-count))))
   (testing "enabling tap> listener"
     (w/click ".tap-listener")
-    (Thread/sleep 10)
+    (Thread/sleep 50)
     (tap> 2)
-    (Thread/sleep 10)
+    (Thread/sleep 50)
     (is (= 1 (evaluation-count)))
     (is (= "2" (w/text-content "div.evaluation div.edn"))))
   (testing "disabling again"
     (w/click ".tap-listener")
-    (Thread/sleep 10)
+    (Thread/sleep 50)
     (tap> 3)
-    (Thread/sleep 10)
+    (Thread/sleep 50)
     (is (= 1 (evaluation-count)))))
 
 (deftest clear-results
