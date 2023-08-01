@@ -1,6 +1,7 @@
 (ns repley.repl
   "REPL state and functions that modify it"
-  (:require [clojure.datafy :as df]))
+  (:require [clojure.datafy :as df]
+            [ripley.live.source :as source]))
 
 (def ^:dynamic *result-id*
   "Current result id, bound when calling visualizer to render."
@@ -8,7 +9,9 @@
 
 (defonce initial-repl-data {:id 0
                             :results []
-                            :ns (the-ns 'user)})
+                            :ns (the-ns 'user)
+                            :tap-listener? false})
+
 (defonce repl-data (atom initial-repl-data))
 
 (defn- eval-result [ns code-str]
@@ -28,7 +31,7 @@
 (defn clear!
   "Clear all REPL evaluations."
   []
-  (reset! repl-data initial-repl-data))
+  (swap! repl-data assoc :results []))
 
 (defn- add-result [{:keys [id] :as repl} result]
   (-> repl
@@ -111,3 +114,35 @@
 
 (defn current-repl-ns []
   (-> repl-data deref :ns))
+
+(defn field-source [& path]
+  (let [p (vec path)
+        getv #(get-in % p)]
+    (source/computed getv repl-data)))
+
+(defn disable-tap-listener! []
+  (swap! repl-data
+         (fn [{tl :tap-listener :as r}]
+           (when tl
+             (remove-tap tl))
+           (-> r
+               (assoc :tap-listener? false)
+               (dissoc :tap-listener)))))
+
+(defn enable-tap-listener! []
+  (when-not (:tap-listener? @repl-data)
+    (let [f #(add-result! {:code-str (str  ";; tap> value received "
+                                           (pr-str (java.util.Date.)))
+                           :result %})]
+
+      (swap! repl-data assoc
+             :tap-listener? true
+             :tap-listener f)
+      (add-tap f)
+      disable-tap-listener!)))
+
+
+(defn toggle-tap-listener! []
+  (if (:tap-listener? @repl-data)
+    (disable-tap-listener!)
+    (enable-tap-listener!)))

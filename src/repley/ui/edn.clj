@@ -185,7 +185,7 @@
    (let [[max-output-source set-max-output!] (source/use-state initial-max-output)
          id repl/*result-id*]
      (h/html
-      [:div
+      [:div.edn
        [::h/if (nil? thing)
         [:span.nil "nil"]
         [::h/live max-output-source

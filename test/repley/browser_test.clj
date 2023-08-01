@@ -13,13 +13,15 @@
         (f)
         (finally
           (repl/clear!)
+          (repl/disable-tap-listener!)
           (stop-server))))))
 
 (t/use-fixtures :each with-repl)
 
 (defn eval-in-repl [& code]
   (let [js (str/replace (apply str code) "'" "\\'")]
-    (.evaluate (w/get-page) (str "() => _eval('" js "')"))))
+    (.evaluate (w/get-page) (str "() => _eval('" js "')"))
+    (Thread/sleep 10)))
 
 (def sample-csv-url "https://media.githubusercontent.com/media/datablist/sample-csv-files/main/files/customers/customers-100.csv")
 
@@ -69,3 +71,35 @@
   (w/click (w/find-one-by-text :.tab "Table"))
   ;;(.pause (w/get-page))
   (is (w/find-one-by-text "td" "<script>alert(2)</script>")))
+
+(defn evaluation-count []
+  (w/count* (w/-query "div.evaluation")))
+
+(deftest tap-listen-option
+  (is (not (.isChecked (w/-query ".tap-listener"))))
+  (testing "tap> does not send result to REPL"
+    (tap> 1)
+    (Thread/sleep 10)
+    (is (zero? (evaluation-count))))
+  (testing "enabling tap> listener"
+    (w/click ".tap-listener")
+    (Thread/sleep 10)
+    (tap> 2)
+    (Thread/sleep 10)
+    (is (= 1 (evaluation-count)))
+    (is (= "2" (w/text-content "div.evaluation div.edn"))))
+  (testing "disabling again"
+    (w/click ".tap-listener")
+    (Thread/sleep 10)
+    (tap> 3)
+    (Thread/sleep 10)
+    (is (= 1 (evaluation-count)))))
+
+(deftest clear-results
+  (eval-in-repl "1")
+  (eval-in-repl "2")
+  (eval-in-repl "3")
+  (is (= 3 (evaluation-count)))
+  (w/click ".clear-results")
+  (Thread/sleep 10)
+  (is (zero? (evaluation-count))))
