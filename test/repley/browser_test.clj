@@ -40,7 +40,7 @@
   (is (= 1 (w/count* (w/query "table.table tbody tr")))))
 
 (defn breadcrumbs []
-  (Thread/sleep 100)
+  (Thread/sleep 200)
   (.evaluate (w/get-page) "() => { var s = ''; document.querySelectorAll('div.breadcrumbs li').forEach(e=>s+=e.innerText+';'); return s; }"))
 
 (deftest breadcrumbs-test
