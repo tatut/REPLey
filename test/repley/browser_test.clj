@@ -76,6 +76,7 @@
   (w/count* (w/-query "div.evaluation")))
 
 (deftest tap-listen-option
+  (w/click ".options")
   (is (not (.isChecked (w/-query ".tap-listener"))))
   (testing "tap> does not send result to REPL"
     (tap> 1)
@@ -100,6 +101,7 @@
   (eval-in-repl "2")
   (eval-in-repl "3")
   (is (= 3 (evaluation-count)))
+  (w/click ".options")
   (w/click ".clear-results")
   (Thread/sleep 10)
   (is (zero? (evaluation-count))))

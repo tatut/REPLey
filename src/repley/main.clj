@@ -183,21 +183,21 @@
        [:div.navbar.bg-base-100
         [:div.flex-1 "REPLey"]
         [:div.flex-none
-         [:button.btn.btn-warning.btn-xs.clear-results
-          {:on-click repl/clear!}
-          (icon/trashcan) "clear results"]
-         [::h/live (repl/field-source :tap-listener?)
-          (fn [tl]
-            (h/html
-             [:div.inline.mx-1
-              [:input.tap-listener {:type :checkbox :checked tl
-                                    :onchange repl/toggle-tap-listener!}]
-              " listen to taps"]))]
-         #_[:details.dropdown.dropdown-end
-          [:summary.m-1.btn.btn-sm "Options"]
-          [:ul {:class "z-[1] p-1 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"}
-           [:li.m-1]
-           [:li "toka"]]]]]
+         [:details.dropdown.dropdown-end.options
+          [:summary.m-1.btn.btn-xs (icon/gear)]
+          [:ul {:class "z-[1] p-1 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-48"}
+           [:li.m-2 [:button.btn.btn-warning.btn-xs.text-xs.clear-results
+                     {:on-click repl/clear!}
+                     (icon/trashcan) "clear results"]]
+           [:li [::h/live (repl/field-source :tap-listener?)
+                 (fn [tl]
+                   (h/html
+                    [:div.form-control
+                     [:label.label.cursor-pointer
+                      [:input.checkbox.tap-listener
+                       {:type :checkbox :checked tl
+                        :onchange repl/toggle-tap-listener!}]
+                      [:span.mx-2.label-text "listen to tap>"]]]))]]]]]]
        [:div.flex.flex-col
         [:div {:style "height: 80vh; overflow-y: auto;"}
          (collection/live-collection
