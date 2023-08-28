@@ -105,3 +105,17 @@
   (w/click ".clear-results")
   (Thread/sleep 10)
   (is (zero? (evaluation-count))))
+
+
+(deftest retry-remembers-visualization
+  (def things [{:foo 1} {:foo 2}])
+  (eval-in-repl "repley.browser-test/things")
+  (is (= 1 (evaluation-count)))
+  (w/click (w/find-one-by-text :.tab "Table"))
+  (w/wait "table.table")
+  (is (= 2 (w/count* (w/query "table.table tbody tr"))))
+
+  ;; Re-evaluate things and retry, table should remain
+  (def things [{:foo 1} {:foo 2} {:foo 3}])
+  (w/click "button.retry")
+  (is (= 3 (w/count* (w/query "table.table tbody tr")))))

@@ -53,6 +53,7 @@
                     acc)))
               {} vs)))
 
+(defonce selected-visualizer (atom {}))
 
 (defn evaluation
   "Ripley component that renders one evaluated result"
@@ -62,14 +63,25 @@
         tabs (into [[:code "Code"]]
                    (for [v supported-visualizers]
                      [v (p/label v)]))
-        [tab-source set-tab!] (source/use-state
-                               (select-visualizer supported-visualizers))]
+        ;; If there is an existing visualizer selected for this
+        ;; value and it still supports it, use that... otherwise
+        ;; select visualizer that supports the data
+        _ (swap! selected-visualizer update id
+                 (fn [old-visualizer]
+                   (if (and old-visualizer (p/supports? old-visualizer value))
+                     old-visualizer
+                     (select-visualizer supported-visualizers))))
+        tab-source (source/computed #(get % id) selected-visualizer)
+        set-tab! #(swap! selected-visualizer assoc id %)
+        remove-result! #(do
+                          (repl/remove-result! id)
+                          (swap! selected-visualizer dissoc id))]
     (h/html
      [:div.evaluation
       [:div.actions.mr-2 {:style "float: right;"}
-       [:button.btn.btn-outline.btn-xs.m-1 {:on-click #(repl/remove-result! id)}
+       [:button.btn.btn-outline.btn-xs.m-1.remove {:on-click remove-result!}
         (icon/trashcan)]
-       [:button.btn.btn-outline.btn-xs.m-1 {:on-click #(repl/retry! id)}
+       [:button.btn.btn-outline.btn-xs.m-1.retry {:on-click #(repl/retry! id)}
         (icon/reload)]]
       [::h/live tab-source
        (fn [tab]
