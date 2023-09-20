@@ -4,6 +4,12 @@
 
 A web REPL made with [Ripley](https://github.com/tatut/ripley)
 
+Some features:
+- Nice and extensible visualization of data (including tables and graphs)
+- Clojure input with autocompletion (using compliment)
+- `tap>` listener (to use as a fancy logging mechanism)
+- easy to integrate into an existing app
+
 ## Usage
 
 Start with ```% clj -M:dev``` and open browser to localhost
