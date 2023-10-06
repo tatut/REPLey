@@ -68,7 +68,8 @@
         ;; select visualizer that supports the data
         _ (swap! selected-visualizer update id
                  (fn [old-visualizer]
-                   (if (and old-visualizer (p/supports? old-visualizer value))
+                   (if (and old-visualizer (or (keyword? old-visualizer)
+                                               (p/supports? old-visualizer value)))
                      old-visualizer
                      (select-visualizer supported-visualizers))))
         tab-source (source/computed #(get % id) selected-visualizer)
