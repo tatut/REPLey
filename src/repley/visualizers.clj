@@ -49,13 +49,14 @@
 
 (def supported-data? (comp boolean columns-and-data))
 
-(defn table-visualizer [_repley-opts {:keys [enabled?]}]
+(defn table-visualizer [_repley-opts {:keys [enabled? precedence]
+                                      :or {precedence 0}}]
   (when enabled?
     (reify p/Visualizer
       (label [_] "Table")
       (supports? [_ data]
         (supported-data? data))
-      (precedence [_] 0)
+      (precedence [_] precedence)
       (render [_ data]
         (let [{:keys [columns data on-row-click]} (columns-and-data data)
               [data-source _] (source/use-state data)]
@@ -68,23 +69,25 @@
 
 
 
-(defn edn-visualizer [_ {enabled? :enabled?}]
+(defn edn-visualizer [_ {:keys [enabled? precedence]
+                         :or {precedence 0}}]
   (when enabled?
     (reify p/Visualizer
       (label [_] "Result")
       (supports? [_ _] true)
-      (precedence [_] 0)
+      (precedence [_] precedence)
       (render [_ data]
         (edn/edn data))
       (ring-handler [_] nil)
       (assets [_] nil))))
 
-(defn throwable-visualizer [_ {enabled? :enabled?}]
+(defn throwable-visualizer [_ {:keys [enabled? precedence]
+                               :or {precedence 100}}]
   (when enabled?
     (reify p/Visualizer
       (label [_] "Throwable")
       (supports? [_ ex] (instance? java.lang.Throwable ex))
-      (precedence [_] 100)
+      (precedence [_] precedence)
       (render [_ ex]
         (let [id repl/*result-id*
               type-label (.getName (type ex))
