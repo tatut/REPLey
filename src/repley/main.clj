@@ -65,7 +65,7 @@
         [value all-visualizers]
         (if (satisfies? p/DefaultVisualizer value)
           (let [def-vis (p/default-visualizer value)]
-            [(p/object def-vis)
+            [(p/object value)
              (conj visualizers def-vis)])
           [value visualizers])
         supported-visualizers (filter #(p/supports? % value) all-visualizers)
