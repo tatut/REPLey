@@ -41,3 +41,8 @@ downloading the file. This can be disabled in config.
 CSV read by `clojure.data.csv` is also supported in the table visualizer.
 
 ![CSV table](https://github.com/tatut/REPLey/assets/83725/84df15cc-bc93-4cac-89ea-4229eecffbc8)
+
+
+# Changes
+
+* 2024-02-12: Support objects that render themselves (DefaultVisualizer protocol)

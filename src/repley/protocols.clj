@@ -20,3 +20,11 @@ this visualizer is enabled. This makes it possible to integrate JS based
 visualizations. Must return either nil or a map containing keys:
   :js  a sequence of JavaScript script source URLs
   :css a sequence of CSS sources"))
+
+(defprotocol DefaultVisualizer
+  "Protocol for objects that provide their own default visualizer.
+  For example if a component can render itself as a Ripley UI."
+  (default-visualizer [this]
+    "Return instance of Visualizer to use by default for this object.")
+  (object [this]
+    "Get the backing object, for other visualizers."))

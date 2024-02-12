@@ -30,6 +30,9 @@
   "Prepare value for display."
   [value]
   (cond
+    (satisfies? p/DefaultVisualizer value)
+    value
+
     (var? value)
     (deref value)
 
@@ -59,7 +62,13 @@
   "Ripley component that renders one evaluated result"
   [{:keys [timestamp-format] :as _opts} visualizers {:keys [id code-str ns result breadcrumbs timestamp duration]}]
   (let [value (display result)
-        supported-visualizers (filter #(p/supports? % value) visualizers)
+        [value all-visualizers]
+        (if (satisfies? p/DefaultVisualizer value)
+          (let [def-vis (p/default-visualizer value)]
+            [(p/object def-vis)
+             (conj visualizers def-vis)])
+          [value visualizers])
+        supported-visualizers (filter #(p/supports? % value) all-visualizers)
         tabs (into [[:code "Code"]]
                    (for [v supported-visualizers]
                      [v (p/label v)]))

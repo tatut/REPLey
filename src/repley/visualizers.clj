@@ -157,3 +157,17 @@
              (throwable-visualizer opts (:throwable-visualizer v))
              (chart-visualizer opts (:chart-visualizer v))
              (vega/vega-visualizer opts (:vega-visualizer v))])))
+
+(defn default-visualizer
+  "Utility to create a default visualizer for the given object."
+  [label object render-fn]
+  (reify p/DefaultVisualizer
+    (default-visualizer [_]
+      (reify p/Visualizer
+        (label [_] label)
+        (supports? [_ data] (= data object))
+        (precedence [_] Long/MAX_VALUE)
+        (render [_ _] (render-fn object))
+        (ring-handler [_] nil)
+        (assets [_] nil)))
+    (object [_] object)))
