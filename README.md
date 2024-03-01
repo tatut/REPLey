@@ -45,4 +45,8 @@ CSV read by `clojure.data.csv` is also supported in the table visualizer.
 
 # Changes
 
-* 2024-02-12: Support objects that render themselves (DefaultVisualizer protocol)
+### 2024-03-01
+- Add `:navbar` component support, which must be ripley component fn
+
+### 2024-02-12
+- Support objects that render themselves (DefaultVisualizer protocol)

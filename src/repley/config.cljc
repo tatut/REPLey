@@ -19,6 +19,9 @@
    ;; Timestamp format, if non-nil, a timestamp is shown for each result.
    :timestamp-format "yyyy-MM-dd HH:mm:ss.SSS"
 
+   ;; Navbar component function, if any (must be a ripley component fn)
+   :navbar nil
+
    ;; Configuration for visualizers
    :visualizers
    {:edn-visualizer {:enabled? true}

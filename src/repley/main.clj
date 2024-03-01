@@ -203,7 +203,9 @@
        (h/live-client-script (str prefix "/_ws"))]
       [:body {:on-load "initREPL()"}
        [:div.navbar.bg-base-100
-        [:div.flex-1 "REPLey"]
+        [:div.flex-1 "REPLey"
+         (when-let [navbar (:navbar opts)]
+           (navbar))]
         [:div.flex-none
          [:details.dropdown.dropdown-end.options
           [:summary.m-1.btn.btn-xs (icon/gear)]
