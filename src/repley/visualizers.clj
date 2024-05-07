@@ -81,6 +81,41 @@
       (ring-handler [_] nil)
       (assets [_] nil))))
 
+(defn- render-throwable [ex]
+  (let [id repl/*result-id*
+        type-label (.getName (type ex))
+        msg (ex-message ex)
+        data (ex-data ex)
+        trace (.getStackTrace ex)
+        cause (.getCause ex)
+        cause-label (when cause
+                      (str (.getName (type cause)) ": "
+                           (.getMessage cause)))]
+    (h/html
+      [:div
+       [:div [:b "Type: "] type-label]
+       [:div [:b "Message:​ "] msg]
+       [::h/when cause-label
+        [:div [:b "Cause: "]
+         [:a {:on-click #(repl/nav-by! id
+                                       (constantly
+                                        {:label (.getName (type cause))
+                                         :value cause}))}
+          cause-label]]]
+       [::h/when (seq data)
+        [:div [:b "Data​ "]
+         (edn/edn data)]]
+       [:div [:b "Stack trace​ "]
+        [:details
+         [:summary (h/out! (count trace) " stack trace lines")]
+         [:ul
+          [::h/for [st trace
+                    :let [cls (.getClassName st)
+                          method (.getMethodName st)
+                          file (.getFileName st)
+                          line (.getLineNumber st)]]
+           [:li cls "." method " (" file ":" line ")"]]]]]])))
+
 (defn throwable-visualizer [_ {:keys [enabled? precedence]
                                :or {precedence 100}}]
   (when enabled?
@@ -88,40 +123,7 @@
       (label [_] "Throwable")
       (supports? [_ ex] (instance? java.lang.Throwable ex))
       (precedence [_] precedence)
-      (render [_ ex]
-        (let [id repl/*result-id*
-              type-label (.getName (type ex))
-              msg (ex-message ex)
-              data (ex-data ex)
-              trace (.getStackTrace ex)
-              cause (.getCause ex)
-              cause-label (when cause
-                            (str (.getName (type cause)) ": "
-                                 (.getMessage cause)))]
-          (h/html
-           [:div
-            [:div [:b "Type: "] type-label]
-            [:div [:b "Message:​ "] msg]
-            [::h/when cause-label
-             [:div [:b "Cause: "]
-              [:a {:on-click #(repl/nav-by! id
-                                            (constantly
-                                             {:label (.getName (type cause))
-                                              :value cause}))}
-               cause-label]]]
-            [::h/when (seq data)
-             [:div [:b "Data​ "]
-              (edn/edn data)]]
-            [:div [:b "Stack trace​ "]
-             [:details
-              [:summary (h/out! (count trace) " stack trace lines")]
-              [:ul
-               [::h/for [st trace
-                         :let [cls (.getClassName st)
-                               method (.getMethodName st)
-                               file (.getFileName st)
-                               line (.getLineNumber st)]]
-                [:li cls "." method " (" file ":" line ")"]]]]]])))
+      (render [_ ex] (render-throwable ex))
       (ring-handler [_] nil)
       (assets [_] nil))))
 
