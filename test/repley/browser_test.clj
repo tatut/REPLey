@@ -23,22 +23,26 @@
     (.evaluate (w/get-page) (str "() => _eval('" js "')"))
     (Thread/sleep 10)))
 
-;; See https://github.com/datablist/sample-csv-files for URL to customers-100.csv
-(def sample-csv-url "https://drive.google.com/uc?id=13a2WyLoGxQKXbN_AIjrOogIlQKNe9uPm&export=download")
+(comment
+  ;; FIXME: disabled this test for now, as the drive URL doesn't seem to be accessible from
+  ;; github actions runner
 
-(deftest csv-table-test
-  (eval-in-repl "(def url \"" sample-csv-url "\")")
-  (is (= (-> 'user ns-publics (get 'url) deref) sample-csv-url))
-  (eval-in-repl "(require '[clojure.data.csv :as csv]) (def customers (csv/read-csv (clojure.java.io/reader url)))")
-  (Thread/sleep 1000) ;; wait for HTTP load and CSV parsing to take place
-  (let [customers (-> 'user ns-publics (get 'customers) deref)]
-    (is (= 101 (count customers))))
-  (w/click (w/find-one-by-text :.tab "Table"))
-  (w/wait "table.table")
-  (is (= 20 (w/count* (w/query "table.table tbody tr"))))
-  (w/fill [:evaluation "input"] "Fiji")
-  (Thread/sleep 500)
-  (is (= 1 (w/count* (w/query "table.table tbody tr")))))
+  ;; See https://github.com/datablist/sample-csv-files for URL to customers-100.csv
+  (def sample-csv-url "https://drive.google.com/uc?id=13a2WyLoGxQKXbN_AIjrOogIlQKNe9uPm&export=download")
+
+  (deftest csv-table-test
+    (eval-in-repl "(def url \"" sample-csv-url "\")")
+    (is (= (-> 'user ns-publics (get 'url) deref) sample-csv-url))
+    (eval-in-repl "(require '[clojure.data.csv :as csv]) (def customers (csv/read-csv (clojure.java.io/reader url)))")
+    (Thread/sleep 1000) ;; wait for HTTP load and CSV parsing to take place
+    (let [customers (-> 'user ns-publics (get 'customers) deref)]
+      (is (= 101 (count customers))))
+    (w/click (w/find-one-by-text :.tab "Table"))
+    (w/wait "table.table")
+    (is (= 20 (w/count* (w/query "table.table tbody tr"))))
+    (w/fill [:evaluation "input"] "Fiji")
+    (Thread/sleep 500)
+    (is (= 1 (w/count* (w/query "table.table tbody tr"))))))
 
 (defn breadcrumbs []
   (Thread/sleep 200)
