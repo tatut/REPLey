@@ -45,11 +45,9 @@
          (merge {:timestamp (java.util.Date.)}
                 result)))
 
-(defn- eval-input [{:keys [ns] :as repl} code-str]
-  (add-result repl (eval-result ns code-str)))
-
 (defn eval-input! [input]
-  (swap! repl-data eval-input input))
+  (let [result (eval-result (:ns @repl-data) input)]
+    (swap! repl-data add-result result)))
 
 (defn- update-result! [id function]
   (swap! repl-data update :results

@@ -47,6 +47,7 @@ CSV read by `clojure.data.csv` is also supported in the table visualizer.
 
 ### 2024-05-08
 - Better navigating of Throwable cause and ex-data
+- Fix side-effects in `swap!` call causing possible multipe results
 
 ### 2024-03-01
 - Add `:navbar` component support, which must be ripley component fn
