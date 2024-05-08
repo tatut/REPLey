@@ -69,13 +69,15 @@
 (defmethod render clojure.lang.Keyword [_ctx kw]
   (h/html [:span.text-emerald-700 (visible (pr-str kw))]))
 
-(defn- nav [key]
+(defn- nav [{:keys [nav]} key]
   (when *top*
-    (str "_nav(" repl/*result-id* ",'"
-         (-> key pr-str
-             (str/replace "\\" "\\\\")
-             (str/replace "'" "\\'"))
-         "')")))
+    (if nav
+      (nav key)
+      (str "_nav(" repl/*result-id* ",'"
+           (-> key pr-str
+               (str/replace "\\" "\\\\")
+               (str/replace "'" "\\'"))
+           "')"))))
 
 (defn- collection [{render-item :render-item :as ctx
                     :or {render-item render-nested}}
@@ -91,7 +93,7 @@
        [::h/for [[i v] (map-indexed vector items)
                  :when (not (truncated?))
                  :let [cls (when *top* "hover:bg-primary")]]
-        [:div.inline-block {:class cls :on-click (nav i)}
+        [:div.inline-block {:class cls :on-click (nav ctx i)}
          (render-item (dissoc ctx :render-item) v)]]]
       (visible after)])))
 
@@ -118,12 +120,12 @@
         [:table
          [::h/for [[key val] normal-entries
                    :when (not (truncated?))]
-          [:tr.whitespace-pre {:class hover :on-click (nav key)}
+          [:tr.whitespace-pre {:class hover :on-click (nav ctx key)}
            [:td.align-top.py-0.pl-0.pr-2
             (render-nested ctx key)]
            [:td.align-top.p-0
             (render-nested ctx val)]]]
-         [:tr.whitespace-pre {:class hover :on-click (nav (key last-entry))}
+         [:tr.whitespace-pre {:class hover :on-click (nav ctx (key last-entry))}
           [:td.align-top.py-0.pl-0.pr-2 (render-nested ctx (key last-entry))]
           [:td.align-top.p-0 [:div.inline-block (render-nested ctx (val last-entry))]
            (visible "}")]]]]))))

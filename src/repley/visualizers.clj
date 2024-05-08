@@ -87,34 +87,33 @@
         msg (ex-message ex)
         data (ex-data ex)
         trace (.getStackTrace ex)
-        cause (.getCause ex)
+        cause (ex-cause ex)
         cause-label (when cause
                       (str (.getName (type cause)) ": "
-                           (.getMessage cause)))]
+                           (.getMessage cause)))
+        nav-by! (fn [label value] (repl/nav-by! id (constantly {:label label :value value})))]
     (h/html
-      [:div
-       [:div [:b "Type: "] type-label]
-       [:div [:b "Message:​ "] msg]
-       [::h/when cause-label
-        [:div [:b "Cause: "]
-         [:a {:on-click #(repl/nav-by! id
-                                       (constantly
-                                        {:label (.getName (type cause))
-                                         :value cause}))}
-          cause-label]]]
-       [::h/when (seq data)
-        [:div [:b "Data​ "]
-         (edn/edn data)]]
-       [:div [:b "Stack trace​ "]
-        [:details
-         [:summary (h/out! (count trace) " stack trace lines")]
-         [:ul
-          [::h/for [st trace
-                    :let [cls (.getClassName st)
-                          method (.getMethodName st)
-                          file (.getFileName st)
-                          line (.getLineNumber st)]]
-           [:li cls "." method " (" file ":" line ")"]]]]]])))
+     [:div
+      [:div [:b "Type: "] type-label]
+      [:div [:b "Message:​ "] msg]
+      [::h/when cause-label
+       [:div [:b "Cause: "]
+        [:a.link {:on-click #(nav-by! (.getName (type cause)) cause)}
+         cause-label]]]
+      [::h/when (seq data)
+       [:div [:b "Data​ "]
+        (edn/edn {:nav (fn [key]
+                         #(nav-by! (str key) (get data key)))} data)]]
+      [:div [:b "Stack trace​ "]
+       [:details
+        [:summary (h/out! (count trace) " stack trace lines")]
+        [:ul
+         [::h/for [st trace
+                   :let [cls (.getClassName st)
+                         method (.getMethodName st)
+                         file (.getFileName st)
+                         line (.getLineNumber st)]]
+          [:li cls "." method " (" file ":" line ")"]]]]]])))
 
 (defn throwable-visualizer [_ {:keys [enabled? precedence]
                                :or {precedence 100}}]
