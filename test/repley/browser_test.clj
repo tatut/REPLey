@@ -23,7 +23,8 @@
     (.evaluate (w/get-page) (str "() => _eval('" js "')"))
     (Thread/sleep 10)))
 
-(def sample-csv-url "https://media.githubusercontent.com/media/datablist/sample-csv-files/main/files/customers/customers-100.csv")
+;; See https://github.com/datablist/sample-csv-files for URL to customers-100.csv
+(def sample-csv-url "https://drive.google.com/uc?id=13a2WyLoGxQKXbN_AIjrOogIlQKNe9uPm&export=download")
 
 (deftest csv-table-test
   (eval-in-repl "(def url \"" sample-csv-url "\")")
