@@ -149,9 +149,20 @@
        (doseq [v visualizers
                :let [{:keys [js css]} (p/assets v)]]
          (doseq [script js]
-           (h/html [:script {:src script}]))
+           (if (map? script)
+             (let [{:keys [src integrity crossorigin]} script]
+               (h/html [:script {:src src
+                                 :integrity integrity
+                                 :crossorigin crossorigin}]))
+             (h/html [:script {:src script}])))
          (doseq [style css]
-           (h/html [:link {:rel "stylesheet" :href style}])))
+           (if (map? style)
+             (let [{:keys [href integrity crossorigin]} style]
+               (h/html [:link {:rel "stylesheet"
+                               :href href
+                               :integrity integrity
+                               :crossorigin crossorigin}]))
+             (h/html [:link {:rel "stylesheet" :href style}]))))
        (js/export-callbacks
         {:_eval repl/eval-input!
          :_crumb repl/nav-to-crumb!

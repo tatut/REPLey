@@ -5,9 +5,15 @@
             [cheshire.core :as cheshire]))
 
 (def ^:private assets
-  {:js ["https://cdnjs.cloudflare.com/ajax/libs/vega/5.25.0/vega.min.js"
-        "https://cdnjs.cloudflare.com/ajax/libs/vega-lite/5.13.0/vega-lite.min.js"
-        "https://cdnjs.cloudflare.com/ajax/libs/vega-embed/6.22.1/vega-embed.min.js"]})
+  {:js [{:src "https://cdnjs.cloudflare.com/ajax/libs/vega/5.25.0/vega.min.js"
+         :integrity "sha384-iY3zZAtrtgjJoD8rliThCLEeLUYo8aSNWYQkL+Jaa3KQEAACPnaw/lQIRrFbPCsj"
+         :crossorigin "anonymous"}
+        {:src "https://cdnjs.cloudflare.com/ajax/libs/vega-lite/5.13.0/vega-lite.min.js"
+         :integrity "sha384-p6KYC7E/n1mGQ58+/RZp4aMe/eAJt3jkaZak4G0efYrc6X3101BXrpT7dOvYp+aC"
+         :crossorigin "anonymous"}
+        {:src "https://cdnjs.cloudflare.com/ajax/libs/vega-embed/6.22.1/vega-embed.min.js"
+         :integrity "sha384-6U8AI3zeuX93P24mCh2fFtZitabRM/8UHBkdnUYSCtIDVlInxMeCw6N26Oeh66mi"
+         :crossorigin "anonymous"}]})
 
 (defn- strip-vega-ns [m]
   (into {}
