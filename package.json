@@ -8,6 +8,6 @@
     "tailwindprod": "tailwindcss -i resources/repley.css -o resources/public/repley.css -m"
   },
   "devDependencies": {
-    "daisyui": "^3.5.0"
+    "daisyui": "^4.12.10"
   }
 }

@@ -45,7 +45,11 @@ CSV read by `clojure.data.csv` is also supported in the table visualizer.
 
 # Changes
 
-### 2024-066-27
+### 2024-09-13
+- Add namespace browser feature
+- EDN visualizer also shows metadata, if any
+
+### 2024-06-27
 - Add sub-resource integrity to external sources (Vega visualizer)
 
 ### 2024-05-08

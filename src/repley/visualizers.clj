@@ -67,7 +67,16 @@
       (ring-handler [_] nil)
       (assets [_] nil))))
 
+(defmulti render-meta-field (fn [k _v] k))
 
+(defmethod render-meta-field :default
+  [_ v]
+  (edn/edn v))
+
+(defmethod render-meta-field :doc
+  [_ v]
+  (h/html
+    [:pre v]))
 
 (defn edn-visualizer [_ {:keys [enabled? precedence]
                          :or {precedence 0}}]
@@ -77,7 +86,22 @@
       (supports? [_ _] true)
       (precedence [_] precedence)
       (render [_ data]
-        (edn/edn data))
+        (let [metadata (meta data)]
+          (h/html
+           [:div
+            (edn/edn data)
+            [::h/when metadata [:div.divider]]
+            [::h/when metadata
+             [:details {:open true}
+              [:summary [:b "Metadata:"]]
+              [:table.table.table-xs
+               [:thead [:tr [:td "Name"] [:td "Value"]]]
+               [:tbody
+                [::h/for [[k v] (seq metadata)]
+                 [:tr
+                  [:td [:b k]]
+                  [:td (render-meta-field k v)]]]]]]]])))
+
       (ring-handler [_] nil)
       (assets [_] nil))))
 
@@ -93,27 +117,27 @@
                            (.getMessage cause)))
         nav-by! (fn [label value] (repl/nav-by! id (constantly {:label label :value value})))]
     (h/html
-     [:div
-      [:div [:b "Type: "] type-label]
-      [:div [:b "Message:​ "] msg]
-      [::h/when cause-label
-       [:div [:b "Cause: "]
-        [:a.link {:on-click #(nav-by! (.getName (type cause)) cause)}
-         cause-label]]]
-      [::h/when (seq data)
-       [:div [:b "Data​ "]
-        (edn/edn {:nav (fn [key]
-                         #(nav-by! (str key) (get data key)))} data)]]
-      [:div [:b "Stack trace​ "]
-       [:details
-        [:summary (h/out! (count trace) " stack trace lines")]
-        [:ul
-         [::h/for [st trace
-                   :let [cls (.getClassName st)
-                         method (.getMethodName st)
-                         file (.getFileName st)
-                         line (.getLineNumber st)]]
-          [:li cls "." method " (" file ":" line ")"]]]]]])))
+      [:div
+       [:div [:b "Type: "] type-label]
+       [:div [:b "Message:​ "] msg]
+       [::h/when cause-label
+        [:div [:b "Cause: "]
+         [:a.link {:on-click #(nav-by! (.getName (type cause)) cause)}
+          cause-label]]]
+       [::h/when (seq data)
+        [:div [:b "Data​ "]
+         (edn/edn {:nav (fn [key]
+                          #(nav-by! (str key) (get data key)))} data)]]
+       [:div [:b "Stack trace​ "]
+        [:details
+         [:summary (h/out! (count trace) " stack trace lines")]
+         [:ul
+          [::h/for [st trace
+                    :let [cls (.getClassName st)
+                          method (.getMethodName st)
+                          file (.getFileName st)
+                          line (.getLineNumber st)]]
+           [:li cls "." method " (" file ":" line ")"]]]]]])))
 
 (defn throwable-visualizer [_ {:keys [enabled? precedence]
                                :or {precedence 100}}]

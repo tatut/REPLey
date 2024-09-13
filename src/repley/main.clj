@@ -15,7 +15,8 @@
             [clojure.datafy :as df]
             [repley.repl :as repl]
             [clojure.edn :as edn]
-            [compliment.core :as compliment]))
+            [compliment.core :as compliment]
+            [repley.browser :as browser]))
 
 (defn listen-to-tap>
   "Install Clojure tap> listener. All values sent via tap> are
@@ -32,9 +33,6 @@
   (cond
     (satisfies? p/DefaultVisualizer value)
     value
-
-    (var? value)
-    (deref value)
 
     (instance? Throwable value)
     value
@@ -110,7 +108,7 @@
                      [::h/if (= label :root)
                       (icon/home)
                       label]]]]]]]
-           [:div.tabs
+           [:div.tabs.tabs-lifted.tabs-sm.block {:role "tablist"}
             [::h/for [[tab-name tab-label] tabs
                       :let [cls (when (= tab-name tab) "tab-active")]]
              [:a.tab.tab-xs {:class cls
@@ -213,40 +211,45 @@
         " }"]
        (h/live-client-script (str prefix "/_ws"))]
       [:body {:on-load "initREPL()"}
-       [:div.navbar.bg-base-100
-        [:div.flex-1 "REPLey"
-         (when-let [navbar (:navbar opts)]
-           (navbar))]
-        [:div.flex-none
-         [:details.dropdown.dropdown-end.options
-          [:summary.m-1.btn.btn-xs (icon/gear)]
-          [:ul {:class "z-[1] p-1 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-48"}
-           [:li.m-2 [:button.btn.btn-warning.btn-xs.text-xs.clear-results
-                     {:on-click repl/clear!}
-                     (icon/trashcan) "clear results"]]
-           [:li [::h/live (repl/field-source :tap-listener?)
-                 (fn [tl]
-                   (h/html
-                    [:div.form-control
-                     [:label.label.cursor-pointer
-                      [:input.checkbox.tap-listener
-                       {:type :checkbox :checked tl
-                        :onchange repl/toggle-tap-listener!}]
-                      [:span.mx-2.label-text "listen to tap>"]]]))]]]]]]
-       [:div.flex.flex-col
-        [:div {:style "height: 80vh; overflow-y: auto;"}
-         (collection/live-collection
-          {:source (source/computed :results repl/repl-data)
-           :render (partial evaluation opts visualizers)
-           :key :id
-           :container-element :span.repl-output})
+       [:div
+        [:div.navbar.bg-base-100
+         [:div.flex-1 "REPLey"
+          (when-let [navbar (:navbar opts)]
+            (navbar))]
+         [:div.flex-none
+          [:details.dropdown.dropdown-end.ns-browser
+           [:summary.m-1.btn.btn-xs (icon/archive)]
+           [:div.dropdown-content.ns-browser.z-10.bg-slate-100
+            (browser/browser)]]
+          [:details.dropdown.dropdown-end.options
+           [:summary.m-1.btn.btn-xs (icon/gear)]
+           [:ul {:class "z-[1] p-1 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-48"}
+            [:li.m-2 [:button.btn.btn-warning.btn-xs.text-xs.clear-results
+                      {:on-click repl/clear!}
+                      (icon/trashcan) "clear results"]]
+            [:li [::h/live (repl/field-source :tap-listener?)
+                  (fn [tl]
+                    (h/html
+                     [:div.form-control
+                      [:label.label.cursor-pointer
+                       [:input.checkbox.tap-listener
+                        {:type :checkbox :checked tl
+                         :onchange repl/toggle-tap-listener!}]
+                       [:span.mx-2.label-text "listen to tap>"]]]))]]]]]]
+        [:div.flex.flex-col
+         [:div {:style "height: 80vh; overflow-y: auto;"}
+          (collection/live-collection
+           {:source (source/computed :results repl/repl-data)
+            :render (partial evaluation opts visualizers)
+            :key :id
+            :container-element :span.repl-output})
 
          ;; Add filler element so we always have scroll
          ;; and navigating doesn't make results jump around.
-         [:div {:style "height: 0vh;"}]]
+          [:div {:style "height: 0vh;"}]]
 
-        [:div.m-2.border {:style "height: 15vh;"}
-         [:pre#repl.w-full.h-full ""]]]]])))
+         [:div.m-2.border {:style "height: 15vh;"}
+          [:pre#repl.w-full.h-full ""]]]]]])))
 
 (defn repley-handler
   "Return a Reply ring handler.
